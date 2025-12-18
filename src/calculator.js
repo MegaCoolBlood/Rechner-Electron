@@ -56,6 +56,10 @@ class Calculator {
                 e.preventDefault();
                 this.displayEl.focus();
             }
+            if (e.key === 'v' && e.ctrlKey) {
+                e.preventDefault();
+                this.pasteFromClipboard();
+            }
         });
 
         // Titlebar buttons
@@ -153,6 +157,16 @@ class Calculator {
     clear() {
         this.displayEl.value = '';
         this.liveResultEl.textContent = '';
+    }
+
+    pasteFromClipboard() {
+        navigator.clipboard.readText().then(text => {
+            if (text) {
+                this.insertText(text);
+            }
+        }).catch(err => {
+            console.error('Failed to read clipboard:', err);
+        });
     }
 
     delete() {
