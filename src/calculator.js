@@ -665,8 +665,35 @@ class Calculator {
 
     formatNumberString(raw) {
         const normalized = raw.replace(/\s+/g, '').replace(/,/g, '.');
+        
+        // Don't format incomplete decimal numbers during input
+        // (e.g., "0.", "0.0", "0.03" should stay as is during typing)
+        if (normalized.includes('.')) {
+            const parts = normalized.split('.');
+            if (parts.length === 2) {
+                const intPart = parts[0] || '0';
+                const fracPart = parts[1];
+                
+                // Format integer part with thousand separators
+                const sign = intPart.startsWith('-') ? '-' : '';
+                const intDigits = intPart.replace('-', '');
+                const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+                
+                // Keep fractional part as-is during input (preserve leading zeros)
+                return sign + groupedInt + ',' + fracPart;
+            }
+        }
+        
+        // For whole numbers, use Decimal formatting
         try {
             const decimal = new Decimal(normalized);
+            if (decimal.isInteger()) {
+                const str = decimal.toFixed(0);
+                const sign = str.startsWith('-') ? '-' : '';
+                const intDigits = str.replace('-', '');
+                const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+                return sign + groupedInt;
+            }
             return this.formatDecimal(decimal);
         } catch {
             return raw;
@@ -677,7 +704,8 @@ class Calculator {
         let result = '';
         let newCaret = caret;
         let pos = 0;
-        const regex = /-?\d[\d\s]*(?:,\d+)?/g;
+        // Updated regex to allow incomplete decimals like "0," or "0,0" during input
+        const regex = /-?\d[\d\s]*(?:,\d*)?/g;
         let match;
 
         while ((match = regex.exec(value)) !== null) {
@@ -701,8 +729,14 @@ class Calculator {
                 // Caret inside token: map using partial formatting of substring
                 const offsetInToken = caret - tokenStart;
                 const tokenBefore = token.slice(0, offsetInToken);
-                const formattedBefore = this.formatNumberString(tokenBefore || '0').replace(/^0+\s*/, '');
-                newCaret = result.length - formatted.length + formattedBefore.length;
+                
+                // Don't try to format incomplete/empty strings
+                if (tokenBefore.length === 0) {
+                    newCaret = result.length - formatted.length;
+                } else {
+                    const formattedBefore = this.formatNumberString(tokenBefore);
+                    newCaret = result.length - formatted.length + formattedBefore.length;
+                }
             } else if (caret > tokenEnd) {
                 const delta = formatted.length - token.length;
                 newCaret += delta;
