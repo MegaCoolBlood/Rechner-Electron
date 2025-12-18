@@ -819,14 +819,19 @@ class Calculator {
             result += replacement;
             i += token.length;
         }
+        
+        // Remove duplicate spaces and adjust caret position
         i = result.length - 1;
         while (i > 0) {
             if (result[i] === ' ' && result[i - 1] === ' ') {
                 result = result.slice(0, i) + result.slice(i + 1);
+                // Adjust caret if it's after the removed space
+                if (newCaret > i) {
+                    newCaret--;
+                }
             }
             i -= 1;
         }
-
 
         return { text: result, caret: newCaret };
     }
