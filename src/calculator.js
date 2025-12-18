@@ -108,12 +108,16 @@ class Calculator {
         const start = el.selectionStart ?? el.value.length;
         const end = el.selectionEnd ?? el.value.length;
 
+        // Store value before formatting to track deletion
+        const valueBefore = el.value;
+        let newCursorPos = start;
+
         if (start !== end) {
             // Delete selection
             const before = el.value.slice(0, start);
             const after = el.value.slice(end);
             el.value = before + after;
-            el.selectionStart = el.selectionEnd = start;
+            newCursorPos = start;
         } else if (start > 0) {
             const charBefore = el.value[start - 1];
             
@@ -145,7 +149,7 @@ class Calculator {
                     const before = el.value.slice(0, deleteStart);
                     const after = el.value.slice(deleteEnd);
                     el.value = before + after;
-                    el.selectionStart = el.selectionEnd = deleteStart;
+                    newCursorPos = deleteStart;
                 } else if ('+-*/'.includes(charAfter) || (charAfter === '*' && el.value[start + 1] === '*')) {
                     // If space is before an operator, delete space + operator + trailing space
                     let deleteEnd = start + 1;
@@ -163,24 +167,44 @@ class Calculator {
                     const before = el.value.slice(0, start - 1);
                     const after = el.value.slice(deleteEnd);
                     el.value = before + after;
-                    el.selectionStart = el.selectionEnd = start - 1;
+                    newCursorPos = start - 1;
                 } else {
                     // Normal space deletion
                     const before = el.value.slice(0, start - 1);
                     const after = el.value.slice(end);
                     el.value = before + after;
-                    el.selectionStart = el.selectionEnd = start - 1;
+                    newCursorPos = start - 1;
                 }
             } else {
                 // Delete single character before cursor
                 const before = el.value.slice(0, start - 1);
                 const after = el.value.slice(end);
                 el.value = before + after;
-                el.selectionStart = el.selectionEnd = start - 1;
+                newCursorPos = start - 1;
             }
         }
 
+        // Format and restore cursor position
+        const unformatted = el.value;
         this.formatDisplay();
+        
+        // After formatting, try to maintain relative cursor position
+        // by counting non-space characters before cursor
+        const nonSpacesBefore = unformatted.slice(0, newCursorPos).replace(/\s/g, '').length;
+        let count = 0;
+        let targetPos = 0;
+        for (let i = 0; i < el.value.length; i++) {
+            if (el.value[i] !== ' ') {
+                count++;
+                if (count === nonSpacesBefore) {
+                    targetPos = i + 1;
+                    break;
+                }
+            }
+        }
+        if (count < nonSpacesBefore) targetPos = el.value.length;
+        
+        el.selectionStart = el.selectionEnd = targetPos;
         this.refreshLiveResult();
     }
 
