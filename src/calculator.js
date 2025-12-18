@@ -52,6 +52,10 @@ class Calculator {
                 e.preventDefault();
                 this.clear();
             }
+            if (e.key === 'F6') {
+                e.preventDefault();
+                this.displayEl.focus();
+            }
         });
 
         // Titlebar buttons
