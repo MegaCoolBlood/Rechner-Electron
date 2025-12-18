@@ -514,8 +514,18 @@ class Calculator {
                 continue;
             }
             
+            // Check if '-' is a negative number or a binary operator
+            // It's a negative number only if:
+            // - It's at the start, OR
+            // - The previous token is an operator (but not ')'), OR
+            // - The previous token is '('
+            const isNegativeNumber = expr[i] === '-' && /[\d]/.test(expr[i + 1]) && (
+                tokens.length === 0 ||
+                (tokens[tokens.length - 1].type === 'operator' && tokens[tokens.length - 1].value !== ')')
+            );
+            
             // Numbers (including decimals and negative)
-            if (/[\d.]/.test(expr[i]) || (expr[i] === '-' && /[\d]/.test(expr[i + 1]))) {
+            if (/[\d.]/.test(expr[i]) || isNegativeNumber) {
                 let num = '';
                 if (expr[i] === '-') {
                     num += '-';
