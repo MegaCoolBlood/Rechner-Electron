@@ -1,3 +1,6 @@
+// Configure Decimal.js for high precision
+Decimal.set({ precision: 50, rounding: Decimal.ROUND_HALF_UP });
+
 class Calculator {
     constructor() {
         this.displayEl = document.getElementById('display');
@@ -140,11 +143,8 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const jsExpression = this.sanitizeExpression(expression);
-            // eslint-disable-next-line no-eval
-            const result = Function('"use strict"; return (' + jsExpression + ')')();
-            
-            const resultStr = this.formatNumber(result);
+            const result = this.evaluateExpression(expression);
+            const resultStr = this.formatDecimal(result);
             this.displayEl.value = resultStr;
             this.addToHistory(expression, resultStr);
             this.liveResultEl.textContent = '';
@@ -158,13 +158,10 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const jsExpression = this.sanitizeExpression(expression);
-            // eslint-disable-next-line no-eval
-            const value = Function('"use strict"; return (' + jsExpression + ')')();
-            
-            if (value === 0) throw new Error('Division durch 0');
-            const result = 1 / value;
-            this.displayEl.value = this.formatNumber(result);
+            const value = this.evaluateExpression(expression);
+            if (value.isZero()) throw new Error('Division durch 0');
+            const result = new Decimal(1).div(value);
+            this.displayEl.value = this.formatDecimal(result);
             this.refreshLiveResult();
         } catch (error) {
             alert('Fehler: ' + error.message);
@@ -176,12 +173,9 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const jsExpression = this.sanitizeExpression(expression);
-            // eslint-disable-next-line no-eval
-            const value = Function('"use strict"; return (' + jsExpression + ')')();
-            
-            const result = value * value;
-            this.displayEl.value = this.formatNumber(result);
+            const value = this.evaluateExpression(expression);
+            const result = value.pow(2);
+            this.displayEl.value = this.formatDecimal(result);
             this.refreshLiveResult();
         } catch (error) {
             alert('Fehler: ' + error.message);
@@ -193,13 +187,10 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const jsExpression = this.sanitizeExpression(expression);
-            // eslint-disable-next-line no-eval
-            const value = Function('"use strict"; return (' + jsExpression + ')')();
-            
-            if (value < 0) throw new Error('Wurzel aus negativer Zahl');
-            const result = Math.sqrt(value);
-            this.displayEl.value = this.formatNumber(result);
+            const value = this.evaluateExpression(expression);
+            if (value.isNegative()) throw new Error('Wurzel aus negativer Zahl');
+            const result = value.sqrt();
+            this.displayEl.value = this.formatDecimal(result);
             this.refreshLiveResult();
         } catch (error) {
             alert('Fehler: ' + error.message);
@@ -211,12 +202,9 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const jsExpression = this.sanitizeExpression(expression);
-            // eslint-disable-next-line no-eval
-            const value = Function('"use strict"; return (' + jsExpression + ')')();
-            
-            const result = value / 100;
-            this.displayEl.value = this.formatNumber(result);
+            const value = this.evaluateExpression(expression);
+            const result = value.div(100);
+            this.displayEl.value = this.formatDecimal(result);
             this.refreshLiveResult();
         } catch (error) {
             alert('Fehler: ' + error.message);
@@ -237,11 +225,8 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const jsExpression = this.sanitizeExpression(expression);
-            // eslint-disable-next-line no-eval
-            const result = Function('"use strict"; return (' + jsExpression + ')')();
-            
-            const resultStr = this.formatNumber(result);
+            const result = this.evaluateExpression(expression);
+            const resultStr = this.formatDecimal(result);
             navigator.clipboard.writeText(resultStr).catch(() => {
                 alert('Konnte nicht in Zwischenablage kopieren');
             });
@@ -278,11 +263,8 @@ class Calculator {
         }
 
         try {
-            const jsExpression = this.sanitizeExpression(expression);
-            // eslint-disable-next-line no-eval
-            const result = Function('"use strict"; return (' + jsExpression + ')')();
-            
-            this.liveResultEl.textContent = this.formatNumber(result);
+            const result = this.evaluateExpression(expression);
+            this.liveResultEl.textContent = this.formatDecimal(result);
         } catch (error) {
             this.liveResultEl.textContent = '…';
         }
@@ -353,11 +335,160 @@ class Calculator {
         return expression.replace(/\s+/g, '').replace(/,/g, '.');
     }
 
+    evaluateExpression(expression) {
+        const sanitized = this.sanitizeExpression(expression);
+        
+        // Parse and evaluate using Decimal.js
+        const tokens = this.tokenize(sanitized);
+        const result = this.evaluateTokens(tokens);
+        
+        return result;
+    }
+
+    tokenize(expr) {
+        const tokens = [];
+        let i = 0;
+        
+        while (i < expr.length) {
+            // Skip whitespace
+            if (/\s/.test(expr[i])) {
+                i++;
+                continue;
+            }
+            
+            // Numbers (including decimals and negative)
+            if (/[\d.]/.test(expr[i]) || (expr[i] === '-' && /[\d]/.test(expr[i + 1]))) {
+                let num = '';
+                if (expr[i] === '-') {
+                    num += '-';
+                    i++;
+                }
+                while (i < expr.length && /[\d.]/.test(expr[i])) {
+                    num += expr[i];
+                    i++;
+                }
+                tokens.push({ type: 'number', value: num });
+                continue;
+            }
+            
+            // Operators and parentheses
+            if ('+-*/()'.includes(expr[i])) {
+                tokens.push({ type: 'operator', value: expr[i] });
+                i++;
+                continue;
+            }
+            
+            // Power operator
+            if (expr.startsWith('**', i)) {
+                tokens.push({ type: 'operator', value: '**' });
+                i += 2;
+                continue;
+            }
+            
+            i++;
+        }
+        
+        return tokens;
+    }
+
+    evaluateTokens(tokens) {
+        // Simple recursive descent parser
+        let pos = 0;
+        
+        const parseExpression = () => {
+            let left = parseTerm();
+            
+            while (pos < tokens.length && (tokens[pos].value === '+' || tokens[pos].value === '-')) {
+                const op = tokens[pos++].value;
+                const right = parseTerm();
+                left = op === '+' ? left.plus(right) : left.minus(right);
+            }
+            
+            return left;
+        };
+        
+        const parseTerm = () => {
+            let left = parseFactor();
+            
+            while (pos < tokens.length && (tokens[pos].value === '*' || tokens[pos].value === '/')) {
+                const op = tokens[pos++].value;
+                const right = parseFactor();
+                left = op === '*' ? left.times(right) : left.div(right);
+            }
+            
+            return left;
+        };
+        
+        const parseFactor = () => {
+            let left = parsePower();
+            return left;
+        };
+        
+        const parsePower = () => {
+            let left = parseUnary();
+            
+            if (pos < tokens.length && tokens[pos].value === '**') {
+                pos++;
+                const right = parsePower();
+                left = left.pow(right);
+            }
+            
+            return left;
+        };
+        
+        const parseUnary = () => {
+            if (pos < tokens.length && tokens[pos].value === '-') {
+                pos++;
+                return parseUnary().neg();
+            }
+            if (pos < tokens.length && tokens[pos].value === '+') {
+                pos++;
+                return parseUnary();
+            }
+            return parsePrimary();
+        };
+        
+        const parsePrimary = () => {
+            if (tokens[pos].type === 'number') {
+                return new Decimal(tokens[pos++].value);
+            }
+            
+            if (tokens[pos].value === '(') {
+                pos++;
+                const result = parseExpression();
+                if (tokens[pos]?.value === ')') pos++;
+                return result;
+            }
+            
+            throw new Error('Unexpected token: ' + tokens[pos]?.value);
+        };
+        
+        return parseExpression();
+    }
+
+    formatDecimal(decimal) {
+        if (!decimal || !decimal.isFinite || !decimal.isFinite()) return 'Fehler';
+        
+        const str = decimal.toFixed();
+        const [intPart, fracPart = ''] = str.split('.');
+        const sign = intPart.startsWith('-') ? '-' : '';
+        const intDigits = intPart.replace('-', '');
+        const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        
+        if (!fracPart || fracPart === '0') return sign + groupedInt;
+        
+        const trimmedFrac = fracPart.replace(/0+$/, '');
+        return sign + groupedInt + ',' + trimmedFrac;
+    }
+
     formatNumberString(raw) {
         const normalized = raw.replace(/\s+/g, '').replace(/,/g, '.');
-        const num = Number(normalized);
-        if (!isFinite(num)) return raw;
-        return this.formatNumber(num);
+        try {
+            const decimal = new Decimal(normalized);
+            return this.formatDecimal(decimal);
+        } catch {
+            return raw;
+        }
     }
 
     formatExpressionWithCaret(value, caret) {
@@ -472,14 +603,13 @@ class Calculator {
             result += replacement;
             i += token.length;
         }
-        i = len - 1;
+        i = result.length - 1;
         while (i > 0) {
             if (result[i] === ' ' && result[i - 1] === ' ') {
                 result = result.slice(0, i) + result.slice(i + 1);
             }
             i -= 1;
         }
-
 
 
         return { text: result, caret: newCaret };

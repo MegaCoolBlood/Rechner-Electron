@@ -12,5 +12,8 @@
   "type": "commonjs",
   "devDependencies": {
     "electron": "^39.2.7"
+  },
+  "dependencies": {
+    "decimal.js": "^10.6.0"
   }
 }
