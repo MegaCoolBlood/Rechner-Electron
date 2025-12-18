@@ -137,8 +137,7 @@ class Calculator {
         if (!expression) return;
 
         try {
-            // Replace German decimal separator with JavaScript decimal
-            const jsExpression = expression.replace(/,/g, '.');
+            const jsExpression = this.sanitizeExpression(expression);
             // eslint-disable-next-line no-eval
             const result = Function('"use strict"; return (' + jsExpression + ')')();
             
@@ -156,7 +155,7 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const jsExpression = expression.replace(/,/g, '.');
+            const jsExpression = this.sanitizeExpression(expression);
             // eslint-disable-next-line no-eval
             const value = Function('"use strict"; return (' + jsExpression + ')')();
             
@@ -174,7 +173,7 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const jsExpression = expression.replace(/,/g, '.');
+            const jsExpression = this.sanitizeExpression(expression);
             // eslint-disable-next-line no-eval
             const value = Function('"use strict"; return (' + jsExpression + ')')();
             
@@ -191,7 +190,7 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const jsExpression = expression.replace(/,/g, '.');
+            const jsExpression = this.sanitizeExpression(expression);
             // eslint-disable-next-line no-eval
             const value = Function('"use strict"; return (' + jsExpression + ')')();
             
@@ -209,7 +208,7 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const jsExpression = expression.replace(/,/g, '.');
+            const jsExpression = this.sanitizeExpression(expression);
             // eslint-disable-next-line no-eval
             const value = Function('"use strict"; return (' + jsExpression + ')')();
             
@@ -235,7 +234,7 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const jsExpression = expression.replace(/,/g, '.');
+            const jsExpression = this.sanitizeExpression(expression);
             // eslint-disable-next-line no-eval
             const result = Function('"use strict"; return (' + jsExpression + ')')();
             
@@ -250,21 +249,22 @@ class Calculator {
 
     formatNumber(value) {
         if (!isFinite(value)) return 'Fehler';
-        
-        if (Number.isInteger(value)) {
-            return value.toLocaleString('de-DE');
-        }
 
-        // Format with max 12 significant digits
-        let str = value.toPrecision(12);
-        
-        // Replace . with , for German locale
-        str = str.replace('.', ',');
-        
-        // Add thousands separator
-        const parts = str.split(',');
-        parts[0] = parseInt(parts[0]).toLocaleString('de-DE');
-        return parts.join(',');
+        // Format with max 12 decimal digits, no scientific notation
+        const formatter = new Intl.NumberFormat('en-US', {
+            useGrouping: false,
+            maximumFractionDigits: 12,
+        });
+
+        const base = formatter.format(value);
+        const [intPartRaw, fracPartRaw = ''] = base.split('.');
+        const sign = intPartRaw.startsWith('-') ? '-' : '';
+        const intDigits = intPartRaw.replace('-', '');
+        const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        const trimmedFrac = fracPartRaw.replace(/0+$/, '');
+
+        if (!trimmedFrac) return sign + groupedInt;
+        return sign + groupedInt + ',' + trimmedFrac;
     }
 
     refreshLiveResult() {
@@ -275,7 +275,7 @@ class Calculator {
         }
 
         try {
-            const jsExpression = expression.replace(/,/g, '.');
+            const jsExpression = this.sanitizeExpression(expression);
             // eslint-disable-next-line no-eval
             const result = Function('"use strict"; return (' + jsExpression + ')')();
             
@@ -343,6 +343,11 @@ class Calculator {
                 this.copyResult();
                 break;
         }
+    }
+
+    sanitizeExpression(expression) {
+        // Remove spaces and normalize decimal separator for JS
+        return expression.replace(/\s+/g, '').replace(/,/g, '.');
     }
 }
 
