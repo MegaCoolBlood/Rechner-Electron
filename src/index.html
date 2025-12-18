@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rechner</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Custom Titlebar -->
+        <div class="titlebar">
+            <div class="titlebar-title">Rechner</div>
+            <div class="titlebar-buttons">
+                <button class="titlebar-btn" id="minimize-btn" title="Minimieren">−</button>
+                <button class="titlebar-btn" id="maximize-btn" title="Maximieren">□</button>
+                <button class="titlebar-btn close" id="close-btn" title="Schließen">✕</button>
+            </div>
+        </div>
+
+        <!-- Main Calculator -->
+        <div class="container">
+            <div class="calc-frame">
+                <!-- Display -->
+                <textarea id="display" class="display"></textarea>
+                <div class="live-result" id="live-result"></div>
+
+                <!-- Buttons -->
+                <div class="buttons-grid">
+                    <!-- Row 1 -->
+                    <button class="btn" data-action="copy-expr" title="Ausdruck kopieren">⎘</button>
+                    <button class="btn" data-action="copy-result" title="Ergebnis kopieren">📋</button>
+                    <button class="btn" data-action="clear" title="Löschen">C</button>
+                    <button class="btn" data-action="backspace" title="Rückwärts">⌫</button>
+
+                    <!-- Row 2 -->
+                    <button class="btn" data-action="reciprocal" title="Kehrwert (1/x)">¹⁄ₓ</button>
+                    <button class="btn" data-action="percent" title="Prozent">%</button>
+                    <button class="btn" data-char="(" title="Klammer auf">(</button>
+                    <button class="btn" data-char=")" title="Klammer zu">)</button>
+
+                    <!-- Row 3 -->
+                    <button class="btn" data-action="power" title="Potenz (x^y)">ˣʸ</button>
+                    <button class="btn" data-action="square" title="Quadrat">ˣ²</button>
+                    <button class="btn" data-action="sqrt" title="Quadratwurzel">√</button>
+                    <button class="btn" data-char="/" title="Division">/</button>
+
+                    <!-- Row 4 -->
+                    <button class="btn number" data-char="7" title="Ziffer 7">7</button>
+                    <button class="btn number" data-char="8" title="Ziffer 8">8</button>
+                    <button class="btn number" data-char="9" title="Ziffer 9">9</button>
+                    <button class="btn" data-char="*" title="Multiplikation">×</button>
+
+                    <!-- Row 5 -->
+                    <button class="btn number" data-char="4" title="Ziffer 4">4</button>
+                    <button class="btn number" data-char="5" title="Ziffer 5">5</button>
+                    <button class="btn number" data-char="6" title="Ziffer 6">6</button>
+                    <button class="btn" data-char="-" title="Subtraktion">−</button>
+
+                    <!-- Row 6 -->
+                    <button class="btn number" data-char="1" title="Ziffer 1">1</button>
+                    <button class="btn number" data-char="2" title="Ziffer 2">2</button>
+                    <button class="btn number" data-char="3" title="Ziffer 3">3</button>
+                    <button class="btn" data-char="+" title="Addition">+</button>
+
+                    <!-- Row 7 -->
+                    <button class="btn" data-action="negate" title="Vorzeichen ändern">±</button>
+                    <button class="btn number" data-char="0" title="Ziffer 0">0</button>
+                    <button class="btn" data-char="." title="Dezimaltrennzeichen">.</button>
+                    <button class="btn equals" data-action="evaluate" title="Berechnen">=</button>
+                </div>
+            </div>
+
+            <!-- History -->
+            <div class="history-frame">
+                <div class="history-title">Historie</div>
+                <div class="history-container">
+                    <ul id="history-list" class="history-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="calculator.js"></script>
+</body>
+</html>
