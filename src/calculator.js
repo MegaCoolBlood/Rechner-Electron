@@ -73,6 +73,7 @@ class Calculator {
 
         // Display input
         this.displayEl.addEventListener('input', () => {
+            this.formatDisplay();
             this.refreshLiveResult();
         });
     }
@@ -90,6 +91,7 @@ class Calculator {
         el.value = before + text + after;
         const cursorPos = start + text.length;
         el.selectionStart = el.selectionEnd = cursorPos;
+        this.formatDisplay();
         this.refreshLiveResult();
     }
 
@@ -117,6 +119,7 @@ class Calculator {
             el.selectionStart = el.selectionEnd = start - 1;
         }
 
+        this.formatDisplay();
         this.refreshLiveResult();
     }
 
@@ -348,6 +351,71 @@ class Calculator {
     sanitizeExpression(expression) {
         // Remove spaces and normalize decimal separator for JS
         return expression.replace(/\s+/g, '').replace(/,/g, '.');
+    }
+
+    formatNumberString(raw) {
+        const normalized = raw.replace(/\s+/g, '').replace(/,/g, '.');
+        const num = Number(normalized);
+        if (!isFinite(num)) return raw;
+        return this.formatNumber(num);
+    }
+
+    formatExpressionWithCaret(value, caret) {
+        let result = '';
+        let newCaret = caret;
+        let pos = 0;
+        const regex = /-?\d[\d\s]*(?:,\d+)?/g;
+        let match;
+
+        while ((match = regex.exec(value)) !== null) {
+            const tokenStart = match.index;
+            const token = match[0];
+            const tokenEnd = tokenStart + token.length;
+
+            // Append non-number segment
+            if (pos < tokenStart) {
+                const segment = value.slice(pos, tokenStart);
+                result += segment;
+                if (caret >= pos && caret <= tokenStart) {
+                    newCaret = result.length - (tokenStart - caret);
+                }
+            }
+
+            const formatted = this.formatNumberString(token);
+            result += formatted;
+
+            if (caret >= tokenStart && caret <= tokenEnd) {
+                // Caret inside token: map using partial formatting of substring
+                const offsetInToken = caret - tokenStart;
+                const tokenBefore = token.slice(0, offsetInToken);
+                const formattedBefore = this.formatNumberString(tokenBefore || '0').replace(/^0+\s*/, '');
+                newCaret = result.length - formatted.length + formattedBefore.length;
+            } else if (caret > tokenEnd) {
+                const delta = formatted.length - token.length;
+                newCaret += delta;
+            }
+
+            pos = tokenEnd;
+        }
+
+        if (pos < value.length) {
+            const segment = value.slice(pos);
+            result += segment;
+            if (caret >= pos) {
+                newCaret = result.length - (value.length - caret);
+            }
+        }
+
+        newCaret = Math.max(0, Math.min(result.length, newCaret));
+        return { text: result, caret: newCaret };
+    }
+
+    formatDisplay() {
+        const el = this.displayEl;
+        const caret = el.selectionStart ?? el.value.length;
+        const { text, caret: newCaret } = this.formatExpressionWithCaret(el.value, caret);
+        el.value = text;
+        el.selectionStart = el.selectionEnd = newCaret;
     }
 }
 
