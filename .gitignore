@@ -31,3 +31,10 @@ coverage/
 
 # Electron cache
 *.asar
+
+# Calculator launcher compilat
+calc.exe
+calc-launcher.exe
+
+# Windows Calculator backups
+*.backup
