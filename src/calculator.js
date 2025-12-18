@@ -413,9 +413,76 @@ class Calculator {
     formatDisplay() {
         const el = this.displayEl;
         const caret = el.selectionStart ?? el.value.length;
-        const { text, caret: newCaret } = this.formatExpressionWithCaret(el.value, caret);
+        const { text: numbersFormatted, caret: caretAfterNumbers } = this.formatExpressionWithCaret(el.value, caret);
+        const { text, caret: newCaret } = this.formatOperatorsWithCaret(numbersFormatted, caretAfterNumbers);
         el.value = text;
         el.selectionStart = el.selectionEnd = newCaret;
+    }
+
+    formatOperatorsWithCaret(value, caret) {
+        let result = '';
+        let newCaret = caret;
+        const len = value.length;
+
+        const prevNonSpace = (pos) => {
+            for (let i = pos - 1; i >= 0; i -= 1) {
+                if (value[i] !== ' ') return value[i];
+            }
+            return '';
+        };
+
+        let i = 0;
+        while (i < len) {
+            let token = null;
+            if (value.startsWith('**', i)) {
+                token = '**';
+            } else {
+                const ch = value[i];
+                if ('+-*/'.includes(ch)) token = ch;
+            }
+
+            if (!token) {
+                result += value[i];
+                i += 1;
+                continue;
+            }
+
+            const tokenStart = i;
+            const prevChar = result.length > 0 ? result[result.length - 1] : '';
+            const prevCh = prevNonSpace(tokenStart);
+            
+            const isUnary = (token === '+' || token === '-') && (!prevCh || '(*+/'.includes(prevCh));
+            
+            // Remove trailing space if present (but only one, to preserve number formatting)
+            let spaceBefore = 0;
+            if (!isUnary && prevChar === ' ') {
+                result = result.slice(0, -1);
+                spaceBefore = 1;
+            }
+            
+            const replacement = isUnary ? token : ` ${token} `;
+            
+            // Adjust caret for removed/added space before operator
+            if (caret > tokenStart - spaceBefore && caret <= tokenStart) {
+                newCaret = result.length + (isUnary ? 0 : 1);
+            } else if (caret > tokenStart) {
+                const delta = replacement.length - token.length - spaceBefore;
+                newCaret += delta;
+            }
+            result += replacement;
+            i += token.length;
+        }
+        i = len - 1;
+        while (i > 0) {
+            if (result[i] === ' ' && result[i - 1] === ' ') {
+                result = result.slice(0, i) + result.slice(i + 1);
+            }
+            i -= 1;
+        }
+
+
+
+        return { text: result, caret: newCaret };
     }
 }
 
