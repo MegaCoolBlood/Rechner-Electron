@@ -431,14 +431,18 @@ class Calculator {
         const expression = this.displayEl.value.trim();
         if (!expression) {
             this.liveResultEl.textContent = '';
+            this.liveResultEl.removeAttribute('title');
             return;
         }
 
         try {
             const result = this.evaluateExpression(expression);
-            this.liveResultEl.textContent = this.formatDecimal(result);
+            const resultStr = this.formatDecimal(result);
+            this.liveResultEl.textContent = resultStr;
+            this.liveResultEl.setAttribute('title', resultStr);
         } catch (error) {
             this.liveResultEl.textContent = '…';
+            this.liveResultEl.removeAttribute('title');
         }
     }
 
