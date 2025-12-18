@@ -95,6 +95,7 @@ body {
     resize: none;
     overflow-wrap: break-word;
     word-wrap: break-word;
+    text-align: right;
 }
 
 .display:focus {
