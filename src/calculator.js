@@ -26,8 +26,8 @@ class Calculator {
             // Text input with selection replacement support
             if ('0123456789,+-*/()'.includes(e.key) || e.key === '.') {
                 e.preventDefault();
-                const char = e.key === ',' ? '.' : e.key;
-                this.insertText(char);
+                const char = e.key === '.' ? ',' : e.key;
+                this.insertText(char === ',' ? ',' : char);
             }
             if (e.key === '^') {
                 e.preventDefault();
