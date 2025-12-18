@@ -115,11 +115,69 @@ class Calculator {
             el.value = before + after;
             el.selectionStart = el.selectionEnd = start;
         } else if (start > 0) {
-            // Delete single character before cursor
-            const before = el.value.slice(0, start - 1);
-            const after = el.value.slice(end);
-            el.value = before + after;
-            el.selectionStart = el.selectionEnd = start - 1;
+            const charBefore = el.value[start - 1];
+            
+            // Check if deleting a space that's part of operator formatting
+            if (charBefore === ' ' && start > 1) {
+                const charBeforeSpace = el.value[start - 2];
+                const charAfter = el.value[start];
+                
+                // If space is after an operator, delete operator + surrounding spaces
+                if ('+-*/'.includes(charBeforeSpace) || (start > 2 && el.value.slice(start - 3, start - 1) === '**')) {
+                    let deleteStart = start - 2;
+                    let deleteEnd = start;
+                    
+                    // Handle ** operator
+                    if (start > 2 && el.value.slice(start - 3, start - 1) === '**') {
+                        deleteStart = start - 3;
+                    }
+                    
+                    // Remove leading space if present
+                    if (deleteStart > 0 && el.value[deleteStart - 1] === ' ') {
+                        deleteStart--;
+                    }
+                    
+                    // Remove trailing space if present
+                    if (deleteEnd < el.value.length && el.value[deleteEnd] === ' ') {
+                        deleteEnd++;
+                    }
+                    
+                    const before = el.value.slice(0, deleteStart);
+                    const after = el.value.slice(deleteEnd);
+                    el.value = before + after;
+                    el.selectionStart = el.selectionEnd = deleteStart;
+                } else if ('+-*/'.includes(charAfter) || (charAfter === '*' && el.value[start + 1] === '*')) {
+                    // If space is before an operator, delete space + operator + trailing space
+                    let deleteEnd = start + 1;
+                    
+                    // Handle ** operator
+                    if (charAfter === '*' && el.value[start + 1] === '*') {
+                        deleteEnd = start + 2;
+                    }
+                    
+                    // Remove trailing space if present
+                    if (deleteEnd < el.value.length && el.value[deleteEnd] === ' ') {
+                        deleteEnd++;
+                    }
+                    
+                    const before = el.value.slice(0, start - 1);
+                    const after = el.value.slice(deleteEnd);
+                    el.value = before + after;
+                    el.selectionStart = el.selectionEnd = start - 1;
+                } else {
+                    // Normal space deletion
+                    const before = el.value.slice(0, start - 1);
+                    const after = el.value.slice(end);
+                    el.value = before + after;
+                    el.selectionStart = el.selectionEnd = start - 1;
+                }
+            } else {
+                // Delete single character before cursor
+                const before = el.value.slice(0, start - 1);
+                const after = el.value.slice(end);
+                el.value = before + after;
+                el.selectionStart = el.selectionEnd = start - 1;
+            }
         }
 
         this.formatDisplay();
