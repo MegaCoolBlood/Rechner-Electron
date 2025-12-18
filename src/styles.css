@@ -79,6 +79,7 @@ body {
     border-radius: 8px;
     padding: 16px;
     gap: 12px;
+    min-width: 0;
 }
 
 /* Display */
