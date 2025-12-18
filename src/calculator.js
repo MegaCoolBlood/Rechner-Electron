@@ -89,10 +89,54 @@ class Calculator {
         const el = this.displayEl;
         const start = el.selectionStart ?? el.value.length;
         const end = el.selectionEnd ?? el.value.length;
-        const before = el.value.slice(0, start);
+        let before = el.value.slice(0, start);
         const after = el.value.slice(end);
+        
+        // Check if inserting an operator after another operator
+        const isBinaryOperator = (op) => {
+            return ['+', '-', '*', '/', '**'].includes(op);
+        };
+        
+        if (isBinaryOperator(text)) {
+            // Find last non-space character before cursor
+            let lastNonSpaceIndex = -1;
+            for (let i = before.length - 1; i >= 0; i--) {
+                if (before[i] !== ' ') {
+                    lastNonSpaceIndex = i;
+                    break;
+                }
+            }
+            
+            if (lastNonSpaceIndex >= 0) {
+                const lastChar = before[lastNonSpaceIndex];
+                let isOperatorBefore = false;
+                let operatorStartIndex = lastNonSpaceIndex;
+                
+                // Check for ** operator
+                if (lastChar === '*' && lastNonSpaceIndex > 0 && before[lastNonSpaceIndex - 1] === '*') {
+                    isOperatorBefore = true;
+                    operatorStartIndex = lastNonSpaceIndex - 1;
+                } else if ('+-*/'.includes(lastChar)) {
+                    isOperatorBefore = true;
+                }
+                
+                // If there's an operator before cursor, replace it
+                if (isOperatorBefore) {
+                    // Remove operator and trailing spaces
+                    let deleteStart = operatorStartIndex;
+                    
+                    // Remove leading spaces before operator
+                    while (deleteStart > 0 && before[deleteStart - 1] === ' ') {
+                        deleteStart--;
+                    }
+                    
+                    before = before.slice(0, deleteStart);
+                }
+            }
+        }
+        
         el.value = before + text + after;
-        const cursorPos = start + text.length;
+        const cursorPos = before.length + text.length;
         el.selectionStart = el.selectionEnd = cursorPos;
         this.formatDisplay();
         this.refreshLiveResult();
