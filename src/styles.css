@@ -116,7 +116,8 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     display: block;
-    flex-shrink: 0;
+    width: 100%;
+    min-width: 0;
 }
 
 /* Buttons Grid */
