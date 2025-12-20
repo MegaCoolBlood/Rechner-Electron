@@ -79,7 +79,7 @@ body {
     border-radius: 8px;
     padding: 16px;
     gap: 12px;
-    min-width: 0;
+    min-width: 55vh;
 }
 
 /* Display */
@@ -191,6 +191,7 @@ body {
     border-radius: 8px;
     padding: 16px;
     gap: 8px;
+    min-width: 35vh;
 }
 
 .history-title {
@@ -220,6 +221,8 @@ body {
     font-size: 16px;
     cursor: pointer;
     transition: all 0.2s;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Allow selection/editing where it makes sense */
