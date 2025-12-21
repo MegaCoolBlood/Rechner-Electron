@@ -7,6 +7,8 @@ class Calculator {
         this.liveResultEl = document.getElementById('live-result');
         this.historyListEl = document.getElementById('history-list');
         this.history = [];
+        this.resultDisplayed = false;
+        this.lastResult = null;
         
         this.setupEventListeners();
     }
@@ -30,6 +32,7 @@ class Calculator {
             if ('0123456789,+-*/()'.includes(e.key) || e.key === '.') {
                 e.preventDefault();
                 const char = e.key === '.' ? ',' : e.key;
+                this.handleResultContinuation(char);
                 this.insertText(char === ',' ? ',' : char);
             }
             if (e.key === '^') {
@@ -59,6 +62,10 @@ class Calculator {
             if (e.key === 'v' && e.ctrlKey) {
                 e.preventDefault();
                 this.pasteFromClipboard();
+            }
+            if (e.key === 'm' || e.key === 'M') {
+                e.preventDefault();
+                this.insertLastResult();
             }
         });
 
@@ -94,6 +101,7 @@ class Calculator {
     }
 
     append(value) {
+        this.handleResultContinuation(value);
         this.insertText(value);
     }
 
@@ -157,6 +165,7 @@ class Calculator {
     clear() {
         this.displayEl.value = '';
         this.liveResultEl.textContent = '';
+        this.resultDisplayed = false;
     }
 
     pasteFromClipboard() {
@@ -320,6 +329,8 @@ class Calculator {
             this.displayEl.value = resultStr;
             this.addToHistory(expression, resultStr);
             this.liveResultEl.textContent = '';
+            this.resultDisplayed = true;
+            this.lastResult = resultStr;
         } catch (error) {
             this.liveResultEl.textContent = '…';
         }
@@ -759,6 +770,29 @@ class Calculator {
 
         newCaret = Math.max(0, Math.min(result.length, newCaret));
         return { text: result, caret: newCaret };
+    }
+
+    handleResultContinuation(char) {
+        if (!this.resultDisplayed) return;
+        
+        const isOperator = '+-*/'.includes(char) || char === '**';
+        const isNumber = '0123456789,.'.includes(char);
+        
+        if (isNumber) {
+            // Clear display for new number
+            this.displayEl.value = '';
+            this.resultDisplayed = false;
+        } else if (isOperator) {
+            // Keep result, append operator
+            this.resultDisplayed = false;
+        }
+    }
+
+    insertLastResult() {
+        if (this.lastResult) {
+            this.resultDisplayed = false;
+            this.insertText(this.lastResult);
+        }
     }
 
     formatDisplay() {
