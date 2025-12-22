@@ -37,6 +37,7 @@ class Calculator {
             }
             if (e.key === '^') {
                 e.preventDefault();
+                this.handleResultContinuation('**');
                 this.insertText('**');
             }
             if (e.key === 'Enter') {
@@ -155,9 +156,16 @@ class Calculator {
             }
         }
         
-        el.value = before + text + after;
-        const cursorPos = before.length + text.length;
-        el.selectionStart = el.selectionEnd = cursorPos;
+        // Calculate cursor position BEFORE formatting to ensure it's at the end of the inserted text
+        const beforeLength = before.length;
+        const textLength = text.length;
+        const valueBeforeFormat = before + text + after;
+        
+        // Set value first without formatting to ensure correct cursor placement
+        el.value = valueBeforeFormat;
+        el.selectionStart = el.selectionEnd = beforeLength + textLength;
+        
+        // Now format the display (this will adjust cursor position appropriately)
         this.formatDisplay();
         this.refreshLiveResult();
     }
@@ -568,17 +576,17 @@ class Calculator {
                 continue;
             }
             
+            // Power operator (check before single *)
+            if (expr.startsWith('**', i)) {
+                tokens.push({ type: 'operator', value: '**' });
+                i += 2;
+                continue;
+            }
+            
             // Operators and parentheses
             if ('+-*/()'.includes(expr[i])) {
                 tokens.push({ type: 'operator', value: expr[i] });
                 i++;
-                continue;
-            }
-            
-            // Power operator
-            if (expr.startsWith('**', i)) {
-                tokens.push({ type: 'operator', value: '**' });
-                i += 2;
                 continue;
             }
             
@@ -775,7 +783,7 @@ class Calculator {
     handleResultContinuation(char) {
         if (!this.resultDisplayed) return;
         
-        const isOperator = '+-*/'.includes(char) || char === '**';
+        const isOperator = '+-*/'.includes(char) || char === '**' || char.includes('*');
         const isNumber = '0123456789,.'.includes(char);
         
         if (isNumber) {
@@ -833,6 +841,7 @@ class Calculator {
             }
 
             const tokenStart = i;
+            const tokenEnd = tokenStart + token.length;
             const prevChar = result.length > 0 ? result[result.length - 1] : '';
             const prevCh = prevNonSpace(tokenStart);
             
@@ -846,13 +855,26 @@ class Calculator {
             }
             
             const replacement = isUnary ? token : ` ${token} `;
+            const resultBeforeOperator = result.length;
             
             // Adjust caret for removed/added space before operator
-            if (caret > tokenStart - spaceBefore && caret <= tokenStart) {
-                newCaret = result.length + (isUnary ? 0 : 1);
-            } else if (caret > tokenStart) {
+            if (caret >= tokenStart && caret <= tokenEnd) {
+                // Cursor is inside or at the end of the operator token
+                if (isUnary) {
+                    // For unary operators, maintain relative position
+                    const offsetInToken = caret - tokenStart;
+                    newCaret = resultBeforeOperator + offsetInToken;
+                } else {
+                    // For binary operators, place cursor after the operator (including trailing space)
+                    newCaret = resultBeforeOperator + replacement.length;
+                }
+            } else if (caret > tokenEnd) {
+                // Cursor is after the token
                 const delta = replacement.length - token.length - spaceBefore;
                 newCaret += delta;
+            } else if (caret > tokenStart - spaceBefore && caret < tokenStart) {
+                // Cursor is in the space before the operator
+                newCaret = resultBeforeOperator + (isUnary ? 0 : 1);
             }
             result += replacement;
             i += token.length;
