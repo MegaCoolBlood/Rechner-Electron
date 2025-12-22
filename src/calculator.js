@@ -26,19 +26,27 @@ class Calculator {
             });
         });
 
-        // Keyboard input
+        // Keyboard input on document
         document.addEventListener('keydown', (e) => {
+            // Special handling for ^ (Dead Key) - may report as "Dead" or "^"
+            if (e.key === '^' || e.key === 'Dead' || e.code === 'BracketLeft') {
+                // Check if this is the circumflex/caret dead key
+                // If it's just a dead key without composition, insert **
+                if (e.key === '^' || (e.key === 'Dead' && e.location === 0)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.handleResultContinuation('**');
+                    this.insertText('**');
+                    return;
+                }
+            }
+            
             // Text input with selection replacement support
             if ('0123456789,+-*/()'.includes(e.key) || e.key === '.') {
                 e.preventDefault();
                 const char = e.key === '.' ? ',' : e.key;
                 this.handleResultContinuation(char);
                 this.insertText(char === ',' ? ',' : char);
-            }
-            if (e.key === '^') {
-                e.preventDefault();
-                this.handleResultContinuation('**');
-                this.insertText('**');
             }
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -69,6 +77,36 @@ class Calculator {
                 this.insertLastResult();
             }
         });
+        
+        // Specific handler for ^ on the display element (Dead Key handling)
+        this.displayEl.addEventListener('keydown', (e) => {
+            if (e.key === '^' || e.key === 'Dead' || e.code === 'BracketLeft') {
+                if (e.key === '^' || (e.key === 'Dead' && e.location === 0)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.handleResultContinuation('**');
+                    this.insertText('**');
+                }
+            }
+        }, true); // Use capture phase
+        
+        // Handle case where ^ is followed by nothing (waits and then gets replaced)
+        let lastDeadKeyTime = 0;
+        this.displayEl.addEventListener('keyup', (e) => {
+            if (e.key === '^' || e.key === 'Dead' || e.code === 'BracketLeft') {
+                lastDeadKeyTime = Date.now();
+                // If no input event occurs within 100ms, the dead key was pressed alone
+                setTimeout(() => {
+                    if (Date.now() - lastDeadKeyTime > 90) {
+                        // Dead key was pressed alone, insert **
+                        if (!this.displayEl.value.includes('^')) {
+                            this.handleResultContinuation('**');
+                            this.insertText('**');
+                        }
+                    }
+                }, 100);
+            }
+        });
 
         // Titlebar buttons
         document.getElementById('minimize-btn').addEventListener('click', () => {
@@ -94,8 +132,22 @@ class Calculator {
             }
         });
 
-        // Display input
+        // Display input - with dead key handling
         this.displayEl.addEventListener('input', () => {
+            // Handle dead key "^" - if it appears in the input, replace it with **
+            if (this.displayEl.value.includes('^')) {
+                const cursorPos = this.displayEl.selectionStart || this.displayEl.value.length;
+                // Count how many ^ are before the cursor to adjust cursor position
+                const beforeCursor = this.displayEl.value.slice(0, cursorPos);
+                const caretCountBefore = (beforeCursor.match(/\^/g) || []).length;
+                
+                // Replace all ^ with **
+                this.displayEl.value = this.displayEl.value.replace(/\^/g, '**');
+                
+                // Adjust cursor position (each ^ becomes **, so add 1 for each)
+                const newCursorPos = cursorPos + caretCountBefore;
+                this.displayEl.selectionStart = this.displayEl.selectionEnd = newCursorPos;
+            }
             this.formatDisplay();
             this.refreshLiveResult();
         });
