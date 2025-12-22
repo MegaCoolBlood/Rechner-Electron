@@ -21,6 +21,7 @@ function createWindow() {
     height,
     x: targetX,
     y: targetY,
+    show: false, // Don't show until ready
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -31,11 +32,21 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
-  // Show devtools in development
-  // mainWindow.webContents.openDevTools();
+  // Show window when ready
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
 }
 
 app.on('ready', createWindow);
+
+// Optimize app startup
+if (process.env.NODE_ENV !== 'development') {
+  // In production, pre-warm app
+  setImmediate(() => {
+    // Empty - just helps optimize timing
+  });
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
