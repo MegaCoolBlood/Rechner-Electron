@@ -7,6 +7,7 @@ import {
 } from './formatting.mjs';
 
 import { evaluateExpression } from './parser.mjs';
+import { applySquareOp, applySqrtOp } from './calculator-core.mjs';
 
 // Configure Decimal.js for high precision
 Decimal.set({ precision: 50, rounding: Decimal.ROUND_HALF_UP });
@@ -424,14 +425,14 @@ class Calculator {
     applySquare() {
         const expression = this.displayEl.value.trim();
         if (!expression) return;
-        this.displayEl.value = `(${expression}) ** 2`;
+        this.displayEl.value = applySquareOp(expression);
         this.refreshLiveResult();
     }
 
     applySqrt() {
         const expression = this.displayEl.value.trim();
         if (!expression) return;
-        this.displayEl.value = `(${expression}) ** (1/2)`;
+        this.displayEl.value = applySqrtOp(expression);
         this.refreshLiveResult();
     }
 

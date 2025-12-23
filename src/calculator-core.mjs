@@ -2,6 +2,20 @@ import { isWhitespace, findLastNonWhitespace, formatExpressionWithCaret, formatO
 import { isBinaryOperator, isOperatorToken } from './operators.mjs';
 
 /**
+ * Wrap an expression in parentheses and append ** 2 operator.
+ */
+export function applySquareOp(expression) {
+  return `(${expression}) ** 2`;
+}
+
+/**
+ * Wrap an expression in parentheses and append ** (1/2) operator.
+ */
+export function applySqrtOp(expression) {
+  return `(${expression}) ** (1/2)`;
+}
+
+/**
  * Remove an operator (including optional spaces around) that ends at index `endIdx` in `str`.
  * Returns { text, cursor } with the new string and new cursor position.
  */
