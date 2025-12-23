@@ -4,9 +4,9 @@ import {
     formatDecimal,
     formatExpressionWithCaret,
     formatOperatorsWithCaret,
-} from './formatting.js';
+} from './formatting.mjs';
 
-import { evaluateExpression } from './parser.js';
+import { evaluateExpression } from './parser.mjs';
 
 // Configure Decimal.js for high precision
 Decimal.set({ precision: 50, rounding: Decimal.ROUND_HALF_UP });
