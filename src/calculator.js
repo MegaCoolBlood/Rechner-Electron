@@ -7,7 +7,7 @@ import {
 } from './formatting.mjs';
 
 import { evaluateExpression } from './parser.mjs';
-import { applySquareOp, applySqrtOp } from './calculator-core.mjs';
+import { applySquareOp, applySqrtOp, insertTextCore } from './calculator-core.mjs';
 
 // Configure Decimal.js for high precision
 Decimal.set({ precision: 50, rounding: Decimal.ROUND_HALF_UP });
@@ -173,57 +173,11 @@ class Calculator {
         const el = this.displayEl;
         const start = el.selectionStart ?? el.value.length;
         const end = el.selectionEnd ?? el.value.length;
-        let before = el.value.slice(0, start);
-        const after = el.value.slice(end);
         
-        // Check if inserting an operator after another operator
-        const isBinaryOperator = (op) => {
-            return ['+', '-', '*', '/', '**'].includes(op);
-        };
+        const result = insertTextCore(el.value, start, end, text);
+        el.value = result.value;
+        el.selectionStart = el.selectionEnd = result.selectionStart;
         
-        if (isBinaryOperator(text)) {
-            // Find last non-space character before cursor
-            const lastNonSpaceIndex = findLastNonWhitespace(before, before.length - 1);
-            
-            if (lastNonSpaceIndex >= 0) {
-                const lastChar = before[lastNonSpaceIndex];
-                let isOperatorBefore = false;
-                let operatorStartIndex = lastNonSpaceIndex;
-                
-                // Check for ** operator
-                if (lastChar === '*' && lastNonSpaceIndex > 0 && before[lastNonSpaceIndex - 1] === '*') {
-                    isOperatorBefore = true;
-                    operatorStartIndex = lastNonSpaceIndex - 1;
-                } else if ('+-*/'.includes(lastChar)) {
-                    isOperatorBefore = true;
-                }
-                
-                // If there's an operator before cursor, replace it
-                if (isOperatorBefore) {
-                    // Remove operator and trailing spaces
-                    let deleteStart = operatorStartIndex;
-                    
-                    // Remove leading spaces before operator
-                    while (deleteStart > 0 && isWhitespace(before[deleteStart - 1])) {
-                        deleteStart--;
-                    }
-                    
-                    before = before.slice(0, deleteStart);
-                }
-            }
-        }
-        
-        // Calculate cursor position BEFORE formatting to ensure it's at the end of the inserted text
-        const beforeLength = before.length;
-        const textLength = text.length;
-        const valueBeforeFormat = before + text + after;
-        
-        // Set value first without formatting to ensure correct cursor placement
-        el.value = valueBeforeFormat;
-        el.selectionStart = el.selectionEnd = beforeLength + textLength;
-        
-        // Now format the display (this will adjust cursor position appropriately)
-        this.formatDisplay();
         this.refreshLiveResult();
     }
 

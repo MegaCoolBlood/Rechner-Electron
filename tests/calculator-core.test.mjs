@@ -142,3 +142,20 @@ test('formatAll maps caret through number and operator formatting', () => {
   assert.equal(r.text, `1${NBSP}234 + 5`);
   assert.ok(r.caret >= 5 && r.caret <= r.text.length);
 });
+
+test('insertTextCore: closing paren adds opening paren at start if needed', () => {
+  let s = insertTextCore('5', 1, 1, ')');
+  assert.equal(s.value, '(5)');
+  
+  s = insertTextCore('2 + 3', 5, 5, ')');
+  assert.equal(s.value, '(2 + 3)');
+  
+  s = insertTextCore('(2 + 3', 6, 6, ')');
+  assert.equal(s.value, '(2 + 3)');
+  
+  s = insertTextCore('2 + (3', 6, 6, ')');
+  assert.equal(s.value, '2 + (3)');
+  
+  s = insertTextCore('(2) + 3', 7, 7, ')');
+  assert.equal(s.value, '((2) + 3)');
+});

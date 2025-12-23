@@ -69,6 +69,17 @@ function replaceOperator(before, newOp) {
   return before;
 }
 
+/** Count unmatched opening parentheses in a string */
+function countUnmatchedOpenParens(str) {
+  let open = 0;
+  let close = 0;
+  for (const ch of str) {
+    if (ch === '(') open++;
+    if (ch === ')') close++;
+  }
+  return open - close;
+}
+
 export function insertTextCore(value, selectionStart, selectionEnd, text) {
   const start = selectionStart ?? value.length;
   const end = selectionEnd ?? value.length;
@@ -77,6 +88,16 @@ export function insertTextCore(value, selectionStart, selectionEnd, text) {
 
   if (isBinaryOperator(text)) {
     before = replaceOperator(before, text);
+  }
+
+  // If inserting closing paren and there's no matching open paren, prepend one at start
+  if (text === ')') {
+    const unmatchedInBefore = countUnmatchedOpenParens(before);
+    const unmatchedInAfter = countUnmatchedOpenParens(after);
+    const totalUnmatched = unmatchedInBefore + unmatchedInAfter;
+    if (totalUnmatched <= 0) {
+      before = '(' + before;
+    }
   }
 
   const beforeLength = before.length;
