@@ -7,6 +7,12 @@
 :root {
     --font-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: monospace, "Consolas", "Cascadia Code", "SFMono-Regular";
+    --paren-1: #7dd3fc;
+    --paren-2: #a5b4fc;
+    --paren-3: #fca5a5;
+    --paren-4: #fcd34d;
+    --paren-5: #6ee7b7;
+    --paren-unmatched: #f87171;
 }
 
 body {
@@ -87,26 +93,56 @@ body {
     min-width: 55vh;
 }
 
-/* Display */
-.display {
+/* Display mit Overlay */
+.display-wrapper {
+    position: relative;
     width: 100%;
     height: 100px;
-    font-size: 22px;
     background: #0b1223;
-    color: #e2e8f0;
     border: 2px solid #22d3ee;
     border-radius: 4px;
-    padding: 8px;
-    font-family: var(--font-mono);
-    resize: none;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    text-align: right;
+    overflow: hidden;
 }
 
-.display:focus {
+.display,
+.display-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 8px;
+    font-size: 22px;
+    font-family: var(--font-mono);
+    line-height: 1.4;
+    text-align: right;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    border: none;
+    z-index: 1;
+}
+
+.display {
+    background: transparent;
+    color: transparent; /* Text aus dem Overlay, nicht aus dem Textarea */
+    caret-color: #e2e8f0;
+    resize: none;
     outline: none;
-    border-color: #22d3ee;
+    z-index: 1;
+}
+
+.display::selection {
+    background: rgba(34, 211, 238, 0.25);
+}
+
+.display-overlay {
+    pointer-events: none;
+    color: transparent; /* Basis unsichtbar; nur farbige Klammern sichtbar */
+    z-index: 2;
+}
+
+.display-overlay .ghost {
+    color: #e2e8f0; /* Overlay malt den Basistext in UI-Farbe */
 }
 
 .live-result {

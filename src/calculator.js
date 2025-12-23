@@ -34,6 +34,7 @@ function scheduleIdle(cb) {
 class Calculator {
     constructor() {
         this.displayEl = document.getElementById('display');
+        this.overlayEl = document.getElementById('display-overlay');
         this.liveResultEl = document.getElementById('live-result');
         this.historyListEl = document.getElementById('history-list');
         this.historyFrameEl = document.querySelector('.history-frame');
@@ -48,6 +49,7 @@ class Calculator {
         });
         
         this.setupEventListeners();
+        this.updateOverlay();
     }
 
     setupEventListeners() {
@@ -208,6 +210,15 @@ class Calculator {
             }
             this.formatDisplay();
             this.refreshLiveResult();
+            this.updateOverlay();
+        });
+        
+        // Sync Scroll zwischen Textarea und Overlay
+        this.displayEl.addEventListener('scroll', () => {
+            if (this.overlayEl) {
+                this.overlayEl.scrollTop = this.displayEl.scrollTop;
+                this.overlayEl.scrollLeft = this.displayEl.scrollLeft;
+            }
         });
     }
 
@@ -247,6 +258,7 @@ class Calculator {
         this.displayEl.value = '';
         this.liveResultEl.textContent = '';
         this.resultDisplayed = false;
+        this.updateOverlay();
     }
 
     pasteFromClipboard() {
@@ -305,8 +317,10 @@ class Calculator {
             this.liveResultEl.textContent = '';
             this.resultDisplayed = true;
             this.lastResult = resultStr;
+            this.updateOverlay();
         } catch (error) {
             this.liveResultEl.textContent = '…';
+            this.updateOverlay();
         }
     }
 
@@ -368,6 +382,7 @@ class Calculator {
         if (!expression) {
             this.liveResultEl.textContent = '';
             this.liveResultEl.removeAttribute('title');
+            this.updateOverlay();
             return;
         }
 
@@ -472,6 +487,13 @@ class Calculator {
         const { text, caret: newCaret } = formatOperatorsWithCaret(numbersFormatted, caretAfterNumbers);
         el.value = text;
         el.selectionStart = el.selectionEnd = newCaret;
+        this.updateOverlay();
+    }
+
+    updateOverlay() {
+        if (!this.overlayEl) return;
+        const text = this.displayEl.value || '';
+        this.overlayEl.innerHTML = highlightParens(text);
     }
 }
 
@@ -479,3 +501,44 @@ class Calculator {
 document.addEventListener('DOMContentLoaded', () => {
     new Calculator();
 });
+
+function escapeHtml(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function highlightParens(text) {
+    const colors = [
+        'var(--paren-1, #7dd3fc)',
+        'var(--paren-2, #a5b4fc)',
+        'var(--paren-3, #fca5a5)',
+        'var(--paren-4, #fcd34d)',
+        'var(--paren-5, #6ee7b7)',
+    ];
+    let depth = 0;
+    let result = '';
+
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '(') {
+            const color = colors[depth % colors.length];
+            result += `<span style="color:${color}">(</span>`;
+            depth += 1;
+        } else if (ch === ')') {
+            const hasMatch = depth > 0;
+            const color = hasMatch ? colors[(depth - 1) % colors.length] : 'var(--paren-unmatched, #f87171)';
+            result += `<span style="color:${color}">)</span>`;
+            if (hasMatch) depth -= 1;
+        } else if (ch === ' ') {
+            result += '<span class="ghost">&nbsp;</span>';
+        } else if (ch === '\n') {
+            result += '<br>';
+        } else {
+            result += `<span class="ghost">${escapeHtml(ch)}</span>`;
+        }
+    }
+
+    return result;
+}

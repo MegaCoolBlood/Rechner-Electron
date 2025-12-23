@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "electron src/main.js",
     "test": "c8 --100 node --test",
     "build": "esbuild src/calculator.js --bundle --format=esm --outfile=dist/renderer.js --sourcemap",
     "test:ui": "playwright test -c playwright.config.js"

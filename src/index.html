@@ -21,8 +21,11 @@
         <!-- Main Calculator -->
         <div class="container">
             <div class="calc-frame">
-                <!-- Display -->
-                <textarea id="display" class="display"></textarea>
+                <!-- Display with overlay for Klammerfärbung -->
+                <div class="display-wrapper">
+                    <pre id="display-overlay" class="display-overlay" aria-hidden="true"></pre>
+                    <textarea id="display" class="display"></textarea>
+                </div>
                 <div class="live-result" id="live-result"></div>
 
                 <!-- Buttons -->
