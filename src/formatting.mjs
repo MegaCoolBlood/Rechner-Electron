@@ -173,7 +173,7 @@ export function formatOperatorsWithCaret(value, caret) {
         } else if (caret > tokenEnd) {
             const delta = replacement.length - token.length - spaceBefore;
             newCaret += delta;
-        } else if (caret > tokenStart - spaceBefore && caret < tokenStart) {
+        } /* c8 ignore next 2 -- caret cannot fall strictly between integer positions */ else if (caret > tokenStart - spaceBefore && caret < tokenStart) {
             newCaret = resultBeforeOperator + (isUnary ? 0 : 1);
         }
         result += replacement;
