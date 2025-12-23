@@ -70,28 +70,3 @@ test('F6 fokussiert das Display-Textfeld', async () => {
   }
 });
 
-test.skip('Titelbar-Buttons rufen window.electron-APIs auf (min/max/close)', async () => {
-  const { electronApp, window } = await launchApp();
-  try {
-    await waitForReady(window);
-    // Stub window.electron
-    await window.evaluate(() => {
-      window.__calls = { min: 0, max: 0, close: 0 };
-      window.electron = {
-        minimize: () => { window.__calls.min++; },
-        maximize: () => { window.__calls.max++; },
-        close: () => { window.__calls.close++; },
-      };
-    });
-
-    await window.locator('#minimize-btn').click();
-    await window.locator('#maximize-btn').click();
-    // "Close" nicht klicken, um Fenster-Schließen durch Electron zu vermeiden; stattdessen direkt Stub aufrufen
-    await window.evaluate(() => window.electron.close());
-
-    const calls = await window.evaluate(() => window.__calls);
-    expect(calls).toEqual({ min: 1, max: 1, close: 1 });
-  } finally {
-    await teardown(electronApp);
-  }
-});
