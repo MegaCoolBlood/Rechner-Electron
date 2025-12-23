@@ -4,8 +4,13 @@
     box-sizing: border-box;
 }
 
+:root {
+    --font-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: monospace, "Consolas", "Cascadia Code", "SFMono-Regular";
+}
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: var(--font-ui);
     background: #0f172a;
     color: #e2e8f0;
     user-select: none;
@@ -92,7 +97,7 @@ body {
     border: 2px solid #22d3ee;
     border-radius: 4px;
     padding: 8px;
-    font-family: monospace;
+    font-family: var(--font-mono);
     resize: none;
     overflow-wrap: break-word;
     word-wrap: break-word;
