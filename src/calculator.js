@@ -172,13 +172,7 @@ class Calculator {
         
         if (isBinaryOperator(text)) {
             // Find last non-space character before cursor
-            let lastNonSpaceIndex = -1;
-            for (let i = before.length - 1; i >= 0; i--) {
-                if (!this.isWhitespace(before[i])) {
-                    lastNonSpaceIndex = i;
-                    break;
-                }
-            }
+            const lastNonSpaceIndex = this.findLastNonWhitespace(before, before.length - 1);
             
             if (lastNonSpaceIndex >= 0) {
                 const lastChar = before[lastNonSpaceIndex];
@@ -488,6 +482,31 @@ class Calculator {
         return char === ' ' || char === '\u00A0';
     }
 
+    // Helper function to find the last non-whitespace character in a string from a given position
+    findLastNonWhitespace(str, fromIndex) {
+        for (let i = fromIndex; i >= 0; i--) {
+            if (!this.isWhitespace(str[i])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // Helper function to format a number part with sign and grouped integers
+    formatNumberPart(numStr, includeFrac = true) {
+        const [intPart, fracPart = ''] = numStr.split('.');
+        const sign = intPart.startsWith('-') ? '-' : '';
+        const intDigits = intPart.replace('-', '');
+        const groupedInt = this.formatIntegerWithSeparators(intDigits);
+        
+        if (!includeFrac || !fracPart || fracPart === '0') {
+            return sign + groupedInt;
+        }
+        
+        const trimmedFrac = fracPart.replace(/0+$/, '');
+        return sign + groupedInt + ',' + trimmedFrac;
+    }
+
     refreshLiveResult() {
         const expression = this.displayEl.value.trim();
         if (!expression) {
@@ -717,15 +736,7 @@ class Calculator {
         if (!decimal || !decimal.isFinite || !decimal.isFinite()) return 'Fehler';
         
         const str = decimal.toFixed();
-        const [intPart, fracPart = ''] = str.split('.');
-        const sign = intPart.startsWith('-') ? '-' : '';
-        const intDigits = intPart.replace('-', '');
-        const groupedInt = this.formatIntegerWithSeparators(intDigits);
-        
-        if (!fracPart || fracPart === '0') return sign + groupedInt;
-        
-        const trimmedFrac = fracPart.replace(/0+$/, '');
-        return sign + groupedInt + ',' + trimmedFrac;
+        return this.formatNumberPart(str, true);
     }
 
     formatNumberString(raw) {
@@ -754,10 +765,7 @@ class Calculator {
             const decimal = new Decimal(normalized);
             if (decimal.isInteger()) {
                 const str = decimal.toFixed(0);
-                const sign = str.startsWith('-') ? '-' : '';
-                const intDigits = str.replace('-', '');
-                const groupedInt = this.formatIntegerWithSeparators(intDigits);
-                return sign + groupedInt;
+                return this.formatNumberPart(str, false);
             }
             return this.formatDecimal(decimal);
         } catch {
@@ -860,10 +868,8 @@ class Calculator {
         const len = value.length;
 
         const prevNonSpace = (pos) => {
-            for (let i = pos - 1; i >= 0; i -= 1) {
-                if (!this.isWhitespace(value[i])) return value[i];
-            }
-            return '';
+            const index = this.findLastNonWhitespace(value, pos - 1);
+            return index >= 0 ? value[index] : '';
         };
 
         let i = 0;
