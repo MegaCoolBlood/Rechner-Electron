@@ -1,5 +1,7 @@
 # Rechner-Electron
 
+[![CI Status](https://github.com/MegaCoolBlood/Rechner-Electron/actions/workflows/ci.yml/badge.svg)](https://github.com/MegaCoolBlood/Rechner-Electron/actions/workflows/ci.yml)
+
 Ein moderner Taschenrechner als Electron-Desktop-Anwendung mit deutscher Lokalisierung, beliebiger Präzision und anpassbarer Oberfläche.
 
 ## Features
@@ -81,7 +83,7 @@ Drücke die Calculator-Taste → Dein Electron-Rechner startet!
 ## Technologie
 
 - **Electron**: v39.2.7
-- **Decimal.js**: v10.4.3 (Arbitrary precision arithmetic)
+- **Decimal.js**: v10.6.0 (Arbitrary precision arithmetic)
 - **Node.js**: CommonJS modules
 - **Präzision**: 50 Dezimalstellen
 
