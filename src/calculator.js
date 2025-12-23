@@ -23,15 +23,25 @@ function ensureDecimalReady() {
     return decimalReadyPromise;
 }
 
+function scheduleIdle(cb) {
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => cb());
+    } else {
+        setTimeout(cb, 0);
+    }
+}
+
 class Calculator {
     constructor() {
         this.displayEl = document.getElementById('display');
         this.liveResultEl = document.getElementById('live-result');
         this.historyListEl = document.getElementById('history-list');
+        this.historyFrameEl = document.querySelector('.history-frame');
         this.history = [];
         this.resultDisplayed = false;
         this.lastResult = null;
         this.isReady = false;
+        this.historyInitialized = false;
         ensureDecimalReady().then(() => {
             this.isReady = true;
             this.refreshLiveResult();
@@ -175,16 +185,10 @@ class Calculator {
             window.electron?.close?.();
         });
 
-        // History click
-        this.historyListEl.addEventListener('click', (e) => {
-            if (e.target.tagName === 'LI') {
-                const index = Array.from(this.historyListEl.children).indexOf(e.target);
-                if (index >= 0 && index < this.history.length) {
-                    this.displayEl.value = this.history[index].expression;
-                    this.refreshLiveResult();
-                }
-            }
-        });
+        // Lazy-Initialisierung der History: erst bei Hover oder bei erster Befüllung
+        this.historyFrameEl?.addEventListener('mouseenter', () => {
+            if (!this.historyInitialized) this.initHistoryUI();
+        }, { once: true });
 
         // Display input - with dead key handling
         this.displayEl.addEventListener('input', () => {
@@ -205,6 +209,21 @@ class Calculator {
             this.formatDisplay();
             this.refreshLiveResult();
         });
+    }
+
+    initHistoryUI() {
+        this.historyInitialized = true;
+        this.historyListEl.addEventListener('click', (e) => {
+            if (e.target.tagName === 'LI') {
+                const index = Array.from(this.historyListEl.children).indexOf(e.target);
+                if (index >= 0 && index < this.history.length) {
+                    this.displayEl.value = this.history[index].expression;
+                    this.refreshLiveResult();
+                }
+            }
+        });
+        // Erste (evtl. leere) Darstellung nicht blockierend planen
+        scheduleIdle(() => this.updateHistoryDisplay());
     }
 
     append(value) {
@@ -372,8 +391,8 @@ class Calculator {
         if (this.history.length > 50) {
             this.history.pop();
         }
-
-        this.updateHistoryDisplay();
+        if (!this.historyInitialized) this.initHistoryUI();
+        scheduleIdle(() => this.updateHistoryDisplay());
     }
 
     updateHistoryDisplay() {
