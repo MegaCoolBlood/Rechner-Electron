@@ -87,6 +87,14 @@ class Calculator {
                 e.preventDefault();
                 this.insertLastResult();
             }
+            if (e.key === 'q' || e.key === 'Q') {
+                e.preventDefault();
+                this.applySquare();
+            }
+            if (e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                this.applySqrt();
+            }
         });
         
         // Specific handler for ^ on the display element (Dead Key handling)
