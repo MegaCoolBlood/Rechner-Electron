@@ -424,13 +424,15 @@ class Calculator {
     applySquare() {
         const expression = this.displayEl.value.trim();
         if (!expression) return;
-        this.insertText('** 2');
+        this.displayEl.value = `(${expression}) ** 2`;
+        this.refreshLiveResult();
     }
 
     applySqrt() {
         const expression = this.displayEl.value.trim();
         if (!expression) return;
-        this.insertText('** (1/2)');
+        this.displayEl.value = `(${expression}) ** (1/2)`;
+        this.refreshLiveResult();
     }
 
     applyPercent() {
