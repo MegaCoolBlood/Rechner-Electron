@@ -491,7 +491,7 @@ class Calculator {
         const [intPartRaw, fracPartRaw = ''] = base.split('.');
         const sign = intPartRaw.startsWith('-') ? '-' : '';
         const intDigits = intPartRaw.replace('-', '');
-        const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
         const trimmedFrac = fracPartRaw.replace(/0+$/, '');
 
         if (!trimmedFrac) return sign + groupedInt;
@@ -730,7 +730,7 @@ class Calculator {
         const [intPart, fracPart = ''] = str.split('.');
         const sign = intPart.startsWith('-') ? '-' : '';
         const intDigits = intPart.replace('-', '');
-        const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
         
         if (!fracPart || fracPart === '0') return sign + groupedInt;
         
@@ -752,7 +752,7 @@ class Calculator {
                 // Format integer part with thousand separators
                 const sign = intPart.startsWith('-') ? '-' : '';
                 const intDigits = intPart.replace('-', '');
-                const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+                const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
                 
                 // Keep fractional part as-is during input (preserve leading zeros)
                 return sign + groupedInt + ',' + fracPart;
@@ -766,7 +766,7 @@ class Calculator {
                 const str = decimal.toFixed(0);
                 const sign = str.startsWith('-') ? '-' : '';
                 const intDigits = str.replace('-', '');
-                const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+                const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
                 return sign + groupedInt;
             }
             return this.formatDecimal(decimal);
