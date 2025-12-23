@@ -1,3 +1,13 @@
+import {
+    isWhitespace,
+    findLastNonWhitespace,
+    formatDecimal,
+    formatExpressionWithCaret,
+    formatOperatorsWithCaret,
+} from './formatting.js';
+
+import { evaluateExpression } from './parser.js';
+
 // Configure Decimal.js for high precision
 Decimal.set({ precision: 50, rounding: Decimal.ROUND_HALF_UP });
 
@@ -172,7 +182,7 @@ class Calculator {
         
         if (isBinaryOperator(text)) {
             // Find last non-space character before cursor
-            const lastNonSpaceIndex = this.findLastNonWhitespace(before, before.length - 1);
+            const lastNonSpaceIndex = findLastNonWhitespace(before, before.length - 1);
             
             if (lastNonSpaceIndex >= 0) {
                 const lastChar = before[lastNonSpaceIndex];
@@ -193,7 +203,7 @@ class Calculator {
                     let deleteStart = operatorStartIndex;
                     
                     // Remove leading spaces before operator
-                    while (deleteStart > 0 && this.isWhitespace(before[deleteStart - 1])) {
+                    while (deleteStart > 0 && isWhitespace(before[deleteStart - 1])) {
                         deleteStart--;
                     }
                     
@@ -275,7 +285,7 @@ class Calculator {
             const charBefore = el.value[start - 1];
             
             // Check if deleting a space that's part of operator formatting
-            if (this.isWhitespace(charBefore) && start > 1) {
+            if (isWhitespace(charBefore) && start > 1) {
                 const charBeforeSpace = el.value[start - 2];
                 const charAfter = el.value[start];
                 
@@ -290,12 +300,12 @@ class Calculator {
                     }
                     
                     // Remove leading space if present
-                    if (deleteStart > 0 && this.isWhitespace(el.value[deleteStart - 1])) {
+                    if (deleteStart > 0 && isWhitespace(el.value[deleteStart - 1])) {
                         deleteStart--;
                     }
                     
                     // Remove trailing space if present
-                    if (deleteEnd < el.value.length && this.isWhitespace(el.value[deleteEnd])) {
+                    if (deleteEnd < el.value.length && isWhitespace(el.value[deleteEnd])) {
                         deleteEnd++;
                     }
                     
@@ -313,7 +323,7 @@ class Calculator {
                     }
                     
                     // Remove trailing space if present
-                    if (deleteEnd < el.value.length && this.isWhitespace(el.value[deleteEnd])) {
+                    if (deleteEnd < el.value.length && isWhitespace(el.value[deleteEnd])) {
                         deleteEnd++;
                     }
                     
@@ -343,11 +353,17 @@ class Calculator {
         
         // After formatting, try to maintain relative cursor position
         // by counting non-space characters before cursor
-        const nonSpacesBefore = unformatted.slice(0, newCursorPos).replace(/\s/g, '').length;
+        // Realign caret based on non-whitespace characters (spaces or NBSPs should be ignored)
+        const nonSpacesBefore = unformatted
+            .slice(0, newCursorPos)
+            .split('')
+            .filter((ch) => !isWhitespace(ch))
+            .length;
+
         let count = 0;
         let targetPos = 0;
         for (let i = 0; i < el.value.length; i++) {
-            if (el.value[i] !== ' ') {
+            if (!isWhitespace(el.value[i])) {
                 count++;
                 if (count === nonSpacesBefore) {
                     targetPos = i + 1;
@@ -378,8 +394,8 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const result = this.evaluateExpression(expression);
-            const resultStr = this.formatDecimal(result);
+            const result = evaluateExpression(expression);
+            const resultStr = formatDecimal(result);
             this.displayEl.value = resultStr;
             this.addToHistory(expression, resultStr);
             this.liveResultEl.textContent = '';
@@ -395,10 +411,10 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const value = this.evaluateExpression(expression);
+            const value = evaluateExpression(expression);
             if (value.isZero()) throw new Error('Division durch 0');
             const result = new Decimal(1).div(value);
-            this.displayEl.value = this.formatDecimal(result);
+            this.displayEl.value = formatDecimal(result);
             this.refreshLiveResult();
         } catch (error) {
             alert('Fehler: ' + error.message);
@@ -410,9 +426,9 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const value = this.evaluateExpression(expression);
+            const value = evaluateExpression(expression);
             const result = value.pow(2);
-            this.displayEl.value = this.formatDecimal(result);
+            this.displayEl.value = formatDecimal(result);
             this.refreshLiveResult();
         } catch (error) {
             alert('Fehler: ' + error.message);
@@ -424,10 +440,10 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const value = this.evaluateExpression(expression);
+            const value = evaluateExpression(expression);
             if (value.isNegative()) throw new Error('Wurzel aus negativer Zahl');
             const result = value.sqrt();
-            this.displayEl.value = this.formatDecimal(result);
+            this.displayEl.value = formatDecimal(result);
             this.refreshLiveResult();
         } catch (error) {
             alert('Fehler: ' + error.message);
@@ -439,9 +455,9 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const value = this.evaluateExpression(expression);
+            const value = evaluateExpression(expression);
             const result = value.div(100);
-            this.displayEl.value = this.formatDecimal(result);
+            this.displayEl.value = formatDecimal(result);
             this.refreshLiveResult();
         } catch (error) {
             alert('Fehler: ' + error.message);
@@ -462,49 +478,14 @@ class Calculator {
         if (!expression) return;
 
         try {
-            const result = this.evaluateExpression(expression);
-            const resultStr = this.formatDecimal(result);
+            const result = evaluateExpression(expression);
+            const resultStr = formatDecimal(result);
             navigator.clipboard.writeText(resultStr).catch(() => {
                 alert('Konnte nicht in Zwischenablage kopieren');
             });
         } catch (error) {
             alert('Fehler beim Kopieren');
         }
-    }
-
-    // Helper function to format integer part with thousand separators (non-breaking spaces)
-    formatIntegerWithSeparators(intDigits) {
-        return intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
-    }
-
-    // Helper function to check if a character is a whitespace (normal or non-breaking space)
-    isWhitespace(char) {
-        return char === ' ' || char === '\u00A0';
-    }
-
-    // Helper function to find the last non-whitespace character in a string from a given position
-    findLastNonWhitespace(str, fromIndex) {
-        for (let i = fromIndex; i >= 0; i--) {
-            if (!this.isWhitespace(str[i])) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    // Helper function to format a number part with sign and grouped integers
-    formatNumberPart(numStr, includeFrac = true) {
-        const [intPart, fracPart = ''] = numStr.split('.');
-        const sign = intPart.startsWith('-') ? '-' : '';
-        const intDigits = intPart.replace('-', '');
-        const groupedInt = this.formatIntegerWithSeparators(intDigits);
-        
-        if (!includeFrac || !fracPart || fracPart === '0') {
-            return sign + groupedInt;
-        }
-        
-        const trimmedFrac = fracPart.replace(/0+$/, '');
-        return sign + groupedInt + ',' + trimmedFrac;
     }
 
     refreshLiveResult() {
@@ -516,8 +497,8 @@ class Calculator {
         }
 
         try {
-            const result = this.evaluateExpression(expression);
-            const resultStr = this.formatDecimal(result);
+            const result = evaluateExpression(expression);
+            const resultStr = formatDecimal(result);
             this.liveResultEl.textContent = resultStr;
             this.liveResultEl.setAttribute('title', resultStr);
         } catch (error) {
@@ -586,250 +567,6 @@ class Calculator {
         }
     }
 
-    sanitizeExpression(expression) {
-        // Remove spaces and normalize decimal separator for JS
-        return expression.replace(/\s+/g, '').replace(/,/g, '.');
-    }
-
-    evaluateExpression(expression) {
-        const sanitized = this.sanitizeExpression(expression);
-        
-        // Parse and evaluate using Decimal.js
-        const tokens = this.tokenize(sanitized);
-        const result = this.evaluateTokens(tokens);
-        
-        return result;
-    }
-
-    tokenize(expr) {
-        const tokens = [];
-        let i = 0;
-        
-        while (i < expr.length) {
-            // Skip whitespace
-            if (/\s/.test(expr[i])) {
-                i++;
-                continue;
-            }
-            
-            // Check if '-' is a negative number or a binary operator
-            // It's a negative number only if:
-            // - It's at the start, OR
-            // - The previous token is an operator (but not ')'), OR
-            // - The previous token is '('
-            const isNegativeNumber = expr[i] === '-' && /[\d]/.test(expr[i + 1]) && (
-                tokens.length === 0 ||
-                (tokens[tokens.length - 1].type === 'operator' && tokens[tokens.length - 1].value !== ')')
-            );
-            
-            // Numbers (including decimals and negative)
-            if (/[\d.]/.test(expr[i]) || isNegativeNumber) {
-                let num = '';
-                if (expr[i] === '-') {
-                    num += '-';
-                    i++;
-                }
-                while (i < expr.length && /[\d.]/.test(expr[i])) {
-                    num += expr[i];
-                    i++;
-                }
-                tokens.push({ type: 'number', value: num });
-                continue;
-            }
-            
-            // Power operator (check before single *)
-            if (expr.startsWith('**', i)) {
-                tokens.push({ type: 'operator', value: '**' });
-                i += 2;
-                continue;
-            }
-            
-            // Operators and parentheses
-            if ('+-*/()'.includes(expr[i])) {
-                tokens.push({ type: 'operator', value: expr[i] });
-                i++;
-                continue;
-            }
-            
-            i++;
-        }
-        
-        return tokens;
-    }
-
-    evaluateTokens(tokens) {
-        // Simple recursive descent parser
-        let pos = 0;
-        
-        const parseExpression = () => {
-            let left = parseTerm();
-            
-            while (pos < tokens.length && (tokens[pos].value === '+' || tokens[pos].value === '-')) {
-                const op = tokens[pos++].value;
-                const right = parseTerm();
-                left = op === '+' ? left.plus(right) : left.minus(right);
-            }
-            
-            return left;
-        };
-        
-        const parseTerm = () => {
-            let left = parseFactor();
-            
-            while (pos < tokens.length && (tokens[pos].value === '*' || tokens[pos].value === '/')) {
-                const op = tokens[pos++].value;
-                const right = parseFactor();
-                left = op === '*' ? left.times(right) : left.div(right);
-            }
-            
-            return left;
-        };
-        
-        const parseFactor = () => {
-            let left = parsePower();
-            return left;
-        };
-        
-        const parsePower = () => {
-            let left = parseUnary();
-            
-            if (pos < tokens.length && tokens[pos].value === '**') {
-                pos++;
-                const right = parsePower();
-                left = left.pow(right);
-            }
-            
-            return left;
-        };
-        
-        const parseUnary = () => {
-            if (pos < tokens.length && tokens[pos].value === '-') {
-                pos++;
-                return parseUnary().neg();
-            }
-            if (pos < tokens.length && tokens[pos].value === '+') {
-                pos++;
-                return parseUnary();
-            }
-            return parsePrimary();
-        };
-        
-        const parsePrimary = () => {
-            if (tokens[pos].type === 'number') {
-                return new Decimal(tokens[pos++].value);
-            }
-            
-            if (tokens[pos].value === '(') {
-                pos++;
-                const result = parseExpression();
-                if (tokens[pos]?.value === ')') pos++;
-                return result;
-            }
-            
-            throw new Error('Unexpected token: ' + tokens[pos]?.value);
-        };
-        
-        return parseExpression();
-    }
-
-    formatDecimal(decimal) {
-        if (!decimal || !decimal.isFinite || !decimal.isFinite()) return 'Fehler';
-        
-        const str = decimal.toFixed();
-        return this.formatNumberPart(str, true);
-    }
-
-    formatNumberString(raw) {
-        const normalized = raw.replace(/\s+/g, '').replace(/,/g, '.');
-        
-        // Don't format incomplete decimal numbers during input
-        // (e.g., "0.", "0.0", "0.03" should stay as is during typing)
-        if (normalized.includes('.')) {
-            const parts = normalized.split('.');
-            if (parts.length === 2) {
-                const intPart = parts[0] || '0';
-                const fracPart = parts[1];
-                
-                // Format integer part with thousand separators
-                const sign = intPart.startsWith('-') ? '-' : '';
-                const intDigits = intPart.replace('-', '');
-                const groupedInt = this.formatIntegerWithSeparators(intDigits);
-                
-                // Keep fractional part as-is during input (preserve leading zeros)
-                return sign + groupedInt + ',' + fracPart;
-            }
-        }
-        
-        // For whole numbers, use Decimal formatting
-        try {
-            const decimal = new Decimal(normalized);
-            if (decimal.isInteger()) {
-                const str = decimal.toFixed(0);
-                return this.formatNumberPart(str, false);
-            }
-            return this.formatDecimal(decimal);
-        } catch {
-            return raw;
-        }
-    }
-
-    formatExpressionWithCaret(value, caret) {
-        let result = '';
-        let newCaret = caret;
-        let pos = 0;
-        // Updated regex to allow incomplete decimals like "0," or "0,0" during input
-        const regex = /-?\d[\d\s]*(?:,\d*)?/g;
-        let match;
-
-        while ((match = regex.exec(value)) !== null) {
-            const tokenStart = match.index;
-            const token = match[0];
-            const tokenEnd = tokenStart + token.length;
-
-            // Append non-number segment
-            if (pos < tokenStart) {
-                const segment = value.slice(pos, tokenStart);
-                result += segment;
-                if (caret >= pos && caret <= tokenStart) {
-                    newCaret = result.length - (tokenStart - caret);
-                }
-            }
-
-            const formatted = this.formatNumberString(token);
-            result += formatted;
-
-            if (caret >= tokenStart && caret <= tokenEnd) {
-                // Caret inside token: map using partial formatting of substring
-                const offsetInToken = caret - tokenStart;
-                const tokenBefore = token.slice(0, offsetInToken);
-                
-                // Don't try to format incomplete/empty strings
-                if (tokenBefore.length === 0) {
-                    newCaret = result.length - formatted.length;
-                } else {
-                    const formattedBefore = this.formatNumberString(tokenBefore);
-                    newCaret = result.length - formatted.length + formattedBefore.length;
-                }
-            } else if (caret > tokenEnd) {
-                const delta = formatted.length - token.length;
-                newCaret += delta;
-            }
-
-            pos = tokenEnd;
-        }
-
-        if (pos < value.length) {
-            const segment = value.slice(pos);
-            result += segment;
-            if (caret >= pos) {
-                newCaret = result.length - (value.length - caret);
-            }
-        }
-
-        newCaret = Math.max(0, Math.min(result.length, newCaret));
-        return { text: result, caret: newCaret };
-    }
-
     handleResultContinuation(char) {
         if (!this.resultDisplayed) return;
         
@@ -856,92 +593,10 @@ class Calculator {
     formatDisplay() {
         const el = this.displayEl;
         const caret = el.selectionStart ?? el.value.length;
-        const { text: numbersFormatted, caret: caretAfterNumbers } = this.formatExpressionWithCaret(el.value, caret);
-        const { text, caret: newCaret } = this.formatOperatorsWithCaret(numbersFormatted, caretAfterNumbers);
+        const { text: numbersFormatted, caret: caretAfterNumbers } = formatExpressionWithCaret(el.value, caret);
+        const { text, caret: newCaret } = formatOperatorsWithCaret(numbersFormatted, caretAfterNumbers);
         el.value = text;
         el.selectionStart = el.selectionEnd = newCaret;
-    }
-
-    formatOperatorsWithCaret(value, caret) {
-        let result = '';
-        let newCaret = caret;
-        const len = value.length;
-
-        const prevNonSpace = (pos) => {
-            const index = this.findLastNonWhitespace(value, pos - 1);
-            return index >= 0 ? value[index] : '';
-        };
-
-        let i = 0;
-        while (i < len) {
-            let token = null;
-            if (value.startsWith('**', i)) {
-                token = '**';
-            } else {
-                const ch = value[i];
-                if ('+-*/'.includes(ch)) token = ch;
-            }
-
-            if (!token) {
-                result += value[i];
-                i += 1;
-                continue;
-            }
-
-            const tokenStart = i;
-            const tokenEnd = tokenStart + token.length;
-            const prevChar = result.length > 0 ? result[result.length - 1] : '';
-            const prevCh = prevNonSpace(tokenStart);
-            
-            const isUnary = (token === '+' || token === '-') && (!prevCh || '(*+/'.includes(prevCh));
-            
-            // Remove trailing space if present (but only one, to preserve number formatting)
-            let spaceBefore = 0;
-            if (!isUnary && this.isWhitespace(prevChar)) {
-                result = result.slice(0, -1);
-                spaceBefore = 1;
-            }
-            
-            const replacement = isUnary ? token : ` ${token} `;
-            const resultBeforeOperator = result.length;
-            
-            // Adjust caret for removed/added space before operator
-            if (caret >= tokenStart && caret <= tokenEnd) {
-                // Cursor is inside or at the end of the operator token
-                if (isUnary) {
-                    // For unary operators, maintain relative position
-                    const offsetInToken = caret - tokenStart;
-                    newCaret = resultBeforeOperator + offsetInToken;
-                } else {
-                    // For binary operators, place cursor after the operator (including trailing space)
-                    newCaret = resultBeforeOperator + replacement.length;
-                }
-            } else if (caret > tokenEnd) {
-                // Cursor is after the token
-                const delta = replacement.length - token.length - spaceBefore;
-                newCaret += delta;
-            } else if (caret > tokenStart - spaceBefore && caret < tokenStart) {
-                // Cursor is in the space before the operator
-                newCaret = resultBeforeOperator + (isUnary ? 0 : 1);
-            }
-            result += replacement;
-            i += token.length;
-        }
-        
-        // Remove duplicate spaces and adjust caret position
-        i = result.length - 1;
-        while (i > 0) {
-            if (this.isWhitespace(result[i]) && this.isWhitespace(result[i - 1])) {
-                result = result.slice(0, i) + result.slice(i + 1);
-                // Adjust caret if it's after the removed space
-                if (newCaret > i) {
-                    newCaret--;
-                }
-            }
-            i -= 1;
-        }
-
-        return { text: result, caret: newCaret };
     }
 }
 
