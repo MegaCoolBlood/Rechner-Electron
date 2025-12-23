@@ -229,6 +229,10 @@ class Calculator {
                 const index = Array.from(this.historyListEl.children).indexOf(e.target);
                 if (index >= 0 && index < this.history.length) {
                     this.displayEl.value = this.history[index].expression;
+                    // Caret ans Ende setzen, damit die Formatierung konsistent ist
+                    this.displayEl.selectionStart = this.displayEl.selectionEnd = this.displayEl.value.length;
+                    // Formatierung anwenden und Overlay aktualisieren
+                    this.formatDisplay();
                     this.refreshLiveResult();
                 }
             }
@@ -252,6 +256,8 @@ class Calculator {
         el.selectionStart = el.selectionEnd = result.selectionStart;
         
         this.refreshLiveResult();
+        // Nach jeder Texteingabe direkt formatieren und Overlay aktualisieren
+        this.formatDisplay();
     }
 
     clear() {
@@ -279,6 +285,7 @@ class Calculator {
         el.value = result.value;
         el.selectionStart = el.selectionEnd = result.selectionStart;
         this.refreshLiveResult();
+        this.formatDisplay();
     }
 
     backspace() {
@@ -291,6 +298,7 @@ class Calculator {
         el.selectionStart = el.selectionEnd = result.selectionStart;
         
         this.refreshLiveResult();
+        this.formatDisplay();
     }
 
     negate() {
@@ -303,6 +311,7 @@ class Calculator {
             this.displayEl.value = '-' + current;
         }
         this.refreshLiveResult();
+        this.formatDisplay();
     }
 
     evaluate() {
@@ -329,6 +338,7 @@ class Calculator {
         if (!expression) return;
         this.displayEl.value = applyReciprocalOp(expression);
         this.refreshLiveResult();
+        this.formatDisplay();
     }
 
     applySquare() {
@@ -336,6 +346,7 @@ class Calculator {
         if (!expression) return;
         this.displayEl.value = applySquareOp(expression);
         this.refreshLiveResult();
+        this.formatDisplay();
     }
 
     applySqrt() {
@@ -343,6 +354,7 @@ class Calculator {
         if (!expression) return;
         this.displayEl.value = applySqrtOp(expression);
         this.refreshLiveResult();
+        this.formatDisplay();
     }
 
     applyPercent() {
@@ -497,10 +509,14 @@ class Calculator {
     }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+// Initialisierung: sofort starten, wenn DOM bereits bereit ist; sonst auf DOMContentLoaded warten
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        new Calculator();
+    });
+} else {
     new Calculator();
-});
+}
 
 function escapeHtml(str) {
     return str

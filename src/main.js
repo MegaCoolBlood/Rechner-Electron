@@ -32,6 +32,8 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
+  // DevTools nicht automatisch öffnen (Debug entfernt)
+
   // Show window when ready
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();

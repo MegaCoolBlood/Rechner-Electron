@@ -161,4 +161,14 @@ test('formatOperatorsWithCaret enforces spacing and caret mapping', () => {
   const dupSpacesCaret = formatOperatorsWithCaret('1   2', 5);
   assert.equal(dupSpacesCaret.text, '1 2');
   assert.equal(dupSpacesCaret.caret, dupSpacesCaret.text.length);
+
+  // Division ohne Leerzeichen um '/'
+  const divNoSpace = formatOperatorsWithCaret('1/2', 2);
+  assert.equal(divNoSpace.text, '1/2');
+  assert.ok(divNoSpace.caret <= divNoSpace.text.length);
+
+  // Division mit Leerzeichen wird komprimiert zu '1/2'
+  const divWithSpace = formatOperatorsWithCaret('1 /  2', 3);
+  assert.equal(divWithSpace.text, '1/2');
+  assert.ok(divWithSpace.caret <= divWithSpace.text.length);
 });

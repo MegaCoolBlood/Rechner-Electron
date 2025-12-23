@@ -153,15 +153,26 @@ export function formatOperatorsWithCaret(value, caret) {
 
         const isUnary = (token === '+' || token === '-') && (!prevCh || '(*+/'.includes(prevCh));
 
-        // Remove trailing space if present (but only one, to preserve number formatting)
+        // Remove trailing space before operator if present (but only one, to preserve number formatting)
         let spaceBefore = 0;
         if (!isUnary && isWhitespace(prevChar)) {
             result = result.slice(0, -1);
             spaceBefore = 1;
         }
 
-        const replacement = isUnary ? token : ` ${token} `;
+        // Spacing-Regel: Kein Leerzeichen um den Divisionsoperator '/'
+        const replacement = isUnary ? token : (token === '/' ? token : ` ${token} `);
         const resultBeforeOperator = result.length;
+
+        // Entferne alle nachfolgenden Leerzeichen direkt nach '/'
+        let spaceAfterCount = 0;
+        if (!isUnary && token === '/') {
+            let j = tokenEnd;
+            while (j < len && isWhitespace(value[j])) {
+                spaceAfterCount++;
+                j++;
+            }
+        }
 
         if (caret >= tokenStart && caret <= tokenEnd) {
             if (isUnary) {
@@ -171,13 +182,13 @@ export function formatOperatorsWithCaret(value, caret) {
                 newCaret = resultBeforeOperator + replacement.length;
             }
         } else if (caret > tokenEnd) {
-            const delta = replacement.length - token.length - spaceBefore;
+            const delta = replacement.length - token.length - spaceBefore - spaceAfterCount;
             newCaret += delta;
         } /* c8 ignore next 2 -- caret cannot fall strictly between integer positions */ else if (caret > tokenStart - spaceBefore && caret < tokenStart) {
             newCaret = resultBeforeOperator + (isUnary ? 0 : 1);
         }
         result += replacement;
-        i += token.length;
+        i += token.length + spaceAfterCount;
     }
 
     // Remove duplicate spaces and adjust caret position
