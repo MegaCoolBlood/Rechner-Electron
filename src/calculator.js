@@ -174,7 +174,7 @@ class Calculator {
             // Find last non-space character before cursor
             let lastNonSpaceIndex = -1;
             for (let i = before.length - 1; i >= 0; i--) {
-                if (before[i] !== ' ') {
+                if (!this.isWhitespace(before[i])) {
                     lastNonSpaceIndex = i;
                     break;
                 }
@@ -199,7 +199,7 @@ class Calculator {
                     let deleteStart = operatorStartIndex;
                     
                     // Remove leading spaces before operator
-                    while (deleteStart > 0 && before[deleteStart - 1] === ' ') {
+                    while (deleteStart > 0 && this.isWhitespace(before[deleteStart - 1])) {
                         deleteStart--;
                     }
                     
@@ -281,7 +281,7 @@ class Calculator {
             const charBefore = el.value[start - 1];
             
             // Check if deleting a space that's part of operator formatting
-            if (charBefore === ' ' && start > 1) {
+            if (this.isWhitespace(charBefore) && start > 1) {
                 const charBeforeSpace = el.value[start - 2];
                 const charAfter = el.value[start];
                 
@@ -296,12 +296,12 @@ class Calculator {
                     }
                     
                     // Remove leading space if present
-                    if (deleteStart > 0 && el.value[deleteStart - 1] === ' ') {
+                    if (deleteStart > 0 && this.isWhitespace(el.value[deleteStart - 1])) {
                         deleteStart--;
                     }
                     
                     // Remove trailing space if present
-                    if (deleteEnd < el.value.length && el.value[deleteEnd] === ' ') {
+                    if (deleteEnd < el.value.length && this.isWhitespace(el.value[deleteEnd])) {
                         deleteEnd++;
                     }
                     
@@ -319,7 +319,7 @@ class Calculator {
                     }
                     
                     // Remove trailing space if present
-                    if (deleteEnd < el.value.length && el.value[deleteEnd] === ' ') {
+                    if (deleteEnd < el.value.length && this.isWhitespace(el.value[deleteEnd])) {
                         deleteEnd++;
                     }
                     
@@ -478,24 +478,14 @@ class Calculator {
         }
     }
 
-    formatNumber(value) {
-        if (!isFinite(value)) return 'Fehler';
+    // Helper function to format integer part with thousand separators (non-breaking spaces)
+    formatIntegerWithSeparators(intDigits) {
+        return intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+    }
 
-        // Format with max 12 decimal digits, no scientific notation
-        const formatter = new Intl.NumberFormat('en-US', {
-            useGrouping: false,
-            maximumFractionDigits: 12,
-        });
-
-        const base = formatter.format(value);
-        const [intPartRaw, fracPartRaw = ''] = base.split('.');
-        const sign = intPartRaw.startsWith('-') ? '-' : '';
-        const intDigits = intPartRaw.replace('-', '');
-        const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-        const trimmedFrac = fracPartRaw.replace(/0+$/, '');
-
-        if (!trimmedFrac) return sign + groupedInt;
-        return sign + groupedInt + ',' + trimmedFrac;
+    // Helper function to check if a character is a whitespace (normal or non-breaking space)
+    isWhitespace(char) {
+        return char === ' ' || char === '\u00A0';
     }
 
     refreshLiveResult() {
@@ -730,7 +720,7 @@ class Calculator {
         const [intPart, fracPart = ''] = str.split('.');
         const sign = intPart.startsWith('-') ? '-' : '';
         const intDigits = intPart.replace('-', '');
-        const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        const groupedInt = this.formatIntegerWithSeparators(intDigits);
         
         if (!fracPart || fracPart === '0') return sign + groupedInt;
         
@@ -752,7 +742,7 @@ class Calculator {
                 // Format integer part with thousand separators
                 const sign = intPart.startsWith('-') ? '-' : '';
                 const intDigits = intPart.replace('-', '');
-                const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+                const groupedInt = this.formatIntegerWithSeparators(intDigits);
                 
                 // Keep fractional part as-is during input (preserve leading zeros)
                 return sign + groupedInt + ',' + fracPart;
@@ -766,7 +756,7 @@ class Calculator {
                 const str = decimal.toFixed(0);
                 const sign = str.startsWith('-') ? '-' : '';
                 const intDigits = str.replace('-', '');
-                const groupedInt = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+                const groupedInt = this.formatIntegerWithSeparators(intDigits);
                 return sign + groupedInt;
             }
             return this.formatDecimal(decimal);
@@ -871,7 +861,7 @@ class Calculator {
 
         const prevNonSpace = (pos) => {
             for (let i = pos - 1; i >= 0; i -= 1) {
-                if (value[i] !== ' ') return value[i];
+                if (!this.isWhitespace(value[i])) return value[i];
             }
             return '';
         };
@@ -901,7 +891,7 @@ class Calculator {
             
             // Remove trailing space if present (but only one, to preserve number formatting)
             let spaceBefore = 0;
-            if (!isUnary && prevChar === ' ') {
+            if (!isUnary && this.isWhitespace(prevChar)) {
                 result = result.slice(0, -1);
                 spaceBefore = 1;
             }
@@ -935,7 +925,7 @@ class Calculator {
         // Remove duplicate spaces and adjust caret position
         i = result.length - 1;
         while (i > 0) {
-            if (result[i] === ' ' && result[i - 1] === ' ') {
+            if (this.isWhitespace(result[i]) && this.isWhitespace(result[i - 1])) {
                 result = result.slice(0, i) + result.slice(i + 1);
                 // Adjust caret if it's after the removed space
                 if (newCaret > i) {
