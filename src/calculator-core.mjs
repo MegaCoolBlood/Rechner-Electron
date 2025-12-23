@@ -163,3 +163,25 @@ export function backspaceCore(value, selectionStart, selectionEnd) {
   const { text: formatted, caret: newCaret } = formatAll(newValue, newCursorPos);
   return { value: formatted, selectionStart: newCaret, selectionEnd: newCaret };
 }
+
+export function deleteCore(value, selectionStart, selectionEnd) {
+  const start = selectionStart ?? value.length;
+  const end = selectionEnd ?? value.length;
+  let newValue = value;
+  let newCursorPos = start;
+
+  if (start !== end) {
+    const before = newValue.slice(0, start);
+    const after = newValue.slice(end);
+    newValue = before + after;
+    newCursorPos = start;
+  } else if (start < newValue.length) {
+    const before = newValue.slice(0, start);
+    const after = newValue.slice(start + 1);
+    newValue = before + after;
+    newCursorPos = start;
+  }
+
+  const { text: formatted, caret: newCaret } = formatAll(newValue, newCursorPos);
+  return { value: formatted, selectionStart: newCaret, selectionEnd: newCaret };
+}

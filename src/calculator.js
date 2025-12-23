@@ -7,7 +7,7 @@ import {
 } from './formatting.mjs';
 
 import { evaluateExpression } from './parser.mjs';
-import { applySquareOp, applySqrtOp, insertTextCore, backspaceCore } from './calculator-core.mjs';
+import { applySquareOp, applySqrtOp, insertTextCore, backspaceCore, deleteCore } from './calculator-core.mjs';
 
 // Configure Decimal.js for high precision
 Decimal.set({ precision: 50, rounding: Decimal.ROUND_HALF_UP });
@@ -201,23 +201,9 @@ class Calculator {
         const el = this.displayEl;
         const start = el.selectionStart ?? el.value.length;
         const end = el.selectionEnd ?? el.value.length;
-
-        if (start !== end) {
-            // Delete selection
-            const before = el.value.slice(0, start);
-            const after = el.value.slice(end);
-            el.value = before + after;
-            el.selectionStart = el.selectionEnd = start;
-        } else if (start < el.value.length) {
-            // Delete character after cursor
-            const before = el.value.slice(0, start);
-            const after = el.value.slice(start + 1);
-            el.value = before + after;
-            el.selectionStart = el.selectionEnd = start;
-        }
-        // If cursor is at the end and nothing is selected, do nothing
-        
-        this.formatDisplay();
+        const result = deleteCore(el.value, start, end);
+        el.value = result.value;
+        el.selectionStart = el.selectionEnd = result.selectionStart;
         this.refreshLiveResult();
     }
 

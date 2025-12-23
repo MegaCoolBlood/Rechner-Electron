@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import Decimal from 'decimal.js';
 global.Decimal = Decimal;
 
-import { insertTextCore, backspaceCore, formatAll } from '../src/calculator-core.mjs';
+import { insertTextCore, backspaceCore, deleteCore, formatAll } from '../src/calculator-core.mjs';
 import { isWhitespace } from '../src/formatting.mjs';
 
 const NBSP = '\u00A0';
@@ -158,4 +158,26 @@ test('insertTextCore: closing paren adds opening paren at start if needed', () =
   
   s = insertTextCore('(2) + 3', 7, 7, ')');
   assert.equal(s.value, '((2) + 3)');
+});
+
+test('deleteCore: deleting selection and single character', () => {
+  let s = deleteCore('123', 0, 1);
+  assert.equal(s.value, '23');
+  assert.equal(s.selectionStart, 0);
+  
+  s = deleteCore('1 + 2', 4, 4);
+  assert.equal(s.value, '1 + ');
+  assert.equal(s.selectionStart, 4);
+  
+  s = deleteCore('12', 0, 0);
+  assert.equal(s.value, '2');
+  assert.equal(s.selectionStart, 0);
+  
+  s = deleteCore('456', 3, 3);
+  assert.equal(s.value, '456');
+  assert.equal(s.selectionStart, 3);
+  
+  s = deleteCore('abc', undefined, undefined);
+  assert.equal(s.value, 'abc');
+  assert.equal(s.selectionStart, 3);
 });
