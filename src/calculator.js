@@ -9,8 +9,19 @@ import {
 import { evaluateExpression } from './parser.mjs';
 import { applySquareOp, applySqrtOp, applyReciprocalOp, insertTextCore, backspaceCore, deleteCore } from './calculator-core.mjs';
 
-// Configure Decimal.js for high precision
-Decimal.set({ precision: 50, rounding: Decimal.ROUND_HALF_UP });
+// Lazy-Ladung von Decimal.js, um den Initialstart zu verkürzen
+let decimalReadyPromise;
+function ensureDecimalReady() {
+    if (!decimalReadyPromise) {
+        const decimalUrl = new URL('../node_modules/decimal.js/decimal.mjs', import.meta.url);
+        decimalReadyPromise = import(decimalUrl.href).then(({ default: DecimalLib }) => {
+            DecimalLib.set({ precision: 50, rounding: DecimalLib.ROUND_HALF_UP });
+            globalThis.Decimal = DecimalLib;
+            return DecimalLib;
+        });
+    }
+    return decimalReadyPromise;
+}
 
 class Calculator {
     constructor() {
@@ -20,6 +31,11 @@ class Calculator {
         this.history = [];
         this.resultDisplayed = false;
         this.lastResult = null;
+        this.isReady = false;
+        ensureDecimalReady().then(() => {
+            this.isReady = true;
+            this.refreshLiveResult();
+        });
         
         this.setupEventListeners();
     }
@@ -29,6 +45,7 @@ class Calculator {
         document.querySelectorAll('.btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                if (!this.isReady) return;
                 if (btn.dataset.char) {
                     this.append(btn.dataset.char);
                 } else if (btn.dataset.action) {
@@ -39,6 +56,7 @@ class Calculator {
 
         // Keyboard input on document
         document.addEventListener('keydown', (e) => {
+            if (!this.isReady) return;
             const keyLower = (e.key || '').toLowerCase();
             // Special handling for ^ (Dead Key) - may report as "Dead" or "^"
             if (e.key === '^' || e.key === 'Dead' || e.code === 'BracketLeft') {
@@ -128,6 +146,7 @@ class Calculator {
         // Handle case where ^ is followed by nothing (waits and then gets replaced)
         let lastDeadKeyTime = 0;
         this.displayEl.addEventListener('keyup', (e) => {
+            if (!this.isReady) return;
             if (e.key === '^' || e.key === 'Dead' || e.code === 'BracketLeft') {
                 lastDeadKeyTime = Date.now();
                 // If no input event occurs within 100ms, the dead key was pressed alone
