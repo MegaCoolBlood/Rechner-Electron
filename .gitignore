@@ -38,3 +38,6 @@ calc-launcher.exe
 
 # Windows Calculator backups
 *.backup
+
+# AI Instructions
+.github/copilot-instructions.md
