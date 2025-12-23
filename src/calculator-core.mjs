@@ -1,5 +1,5 @@
 import { isWhitespace, findLastNonWhitespace, formatExpressionWithCaret, formatOperatorsWithCaret } from './formatting.mjs';
-import { isBinaryOperator } from './operators.mjs';
+import { isBinaryOperator, isOperatorToken } from './operators.mjs';
 
 /**
  * Remove an operator (including optional spaces around) that ends at index `endIdx` in `str`.
@@ -41,7 +41,7 @@ function replaceOperator(before, newOp) {
       if (lastChar === '*' && lastNonSpaceIndex > 0 && before[lastNonSpaceIndex - 1] === '*') {
         isOperatorBefore = true;
         operatorStartIndex = lastNonSpaceIndex - 1;
-      } else if ('+-*/'.includes(lastChar)) {
+      } else if (isOperatorToken(lastChar)) {
         isOperatorBefore = true;
       }
     }
@@ -93,11 +93,11 @@ export function backspaceCore(value, selectionStart, selectionEnd) {
       const charBeforeSpace = newValue[start - 2];
       const charAfter = newValue[start];
 
-      if ('+-*/'.includes(charBeforeSpace)) {
+      if (isOperatorToken(charBeforeSpace)) {
         const { text, cursor } = removeOperatorBefore(newValue, start);
         newValue = text;
         newCursorPos = cursor;
-      } else if ('+-*/'.includes(charAfter)) {
+      } else if (isOperatorToken(charAfter)) {
         let deleteEnd = start + 1;
         if (charAfter === '*' && newValue[start + 1] === '*') {
           deleteEnd = start + 2;

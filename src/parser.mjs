@@ -1,5 +1,5 @@
 // Parsing and evaluation utilities for expressions
-import { isAddSub, isMulDiv } from './operators.mjs';
+import { isAddSub, isMulDiv, isOperatorToken } from './operators.mjs';
 
 export function sanitizeExpression(expression) {
     return expression.replace(/\s+/g, '').replace(/,/g, '.');
@@ -40,7 +40,7 @@ export function tokenize(expr) {
             continue;
         }
 
-        if ('+-*/()'.includes(expr[i])) {
+        if (isOperatorToken(expr[i]) || '()'.includes(expr[i])) {
             tokens.push({ type: 'operator', value: expr[i] });
             i++;
             continue;

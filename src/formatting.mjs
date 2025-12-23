@@ -1,6 +1,7 @@
 // Formatting utilities for numbers, caret mapping, and operator spacing
 import { NBSP, normalizeNumericInput, decimalSeparator } from './locale.mjs';
 import { findNumberTokens } from './tokenizer-lenient.mjs';
+import { isOperatorToken } from './operators.mjs';
 
 export function isWhitespace(char) {
     return char === ' ' || char === NBSP;
@@ -136,7 +137,7 @@ export function formatOperatorsWithCaret(value, caret) {
             token = '**';
         } else {
             const ch = value[i];
-            if ('+-*/'.includes(ch)) token = ch;
+            if (isOperatorToken(ch)) token = ch;
         }
 
         if (!token) {
