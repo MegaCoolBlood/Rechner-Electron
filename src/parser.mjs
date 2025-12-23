@@ -73,7 +73,13 @@ export function evaluateTokens(tokens) {
         while (pos < tokens.length && isMulDiv(tokens[pos].value)) {
             const op = tokens[pos++].value;
             const right = parseFactor();
-            left = op === '*' ? left.times(right) : left.div(right);
+            if (op === '*') {
+                left = left.times(right);
+            } else if (op === '/') {
+                left = left.div(right);
+            } else {
+                left = left.mod(right);
+            }
         }
 
         return left;

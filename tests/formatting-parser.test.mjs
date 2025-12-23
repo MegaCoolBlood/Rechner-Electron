@@ -42,6 +42,8 @@ test('evaluateExpression handles basic ops, precedence, and right-associative po
   assert.equal(evaluateExpression('-(2+3)').toString(), '-5');
   assert.equal(evaluateExpression('5-2').toString(), '3');
   assert.equal(evaluateExpression('8/4').toString(), '2');
+  assert.equal(evaluateExpression('7%3').toString(), '1');
+  assert.equal(evaluateExpression('10 % 4 + 2').toString(), '4');
 });
 
 test('evaluateExpression normalizes commas and whitespace', () => {

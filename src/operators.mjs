@@ -4,6 +4,7 @@ export const OPERATORS = [
   { token: '**', arity: 2, precedence: 3, associativity: 'right', spacing: 'binary-spaced' },
   { token: '*', arity: 2, precedence: 2, associativity: 'left', spacing: 'binary-spaced' },
   { token: '/', arity: 2, precedence: 2, associativity: 'left', spacing: 'binary-spaced' },
+  { token: '%', arity: 2, precedence: 2, associativity: 'left', spacing: 'binary-spaced' },
   { token: '+', arity: 2, precedence: 1, associativity: 'left', spacing: 'binary-spaced' },
   { token: '-', arity: 2, precedence: 1, associativity: 'left', spacing: 'binary-spaced' },
   // unary handled contextually for + and - (tight spacing)
@@ -30,7 +31,7 @@ export function isAddSub(token) {
 }
 
 export function isMulDiv(token) {
-  return token === '*' || token === '/';
+  return token === '*' || token === '/' || token === '%';
 }
 
 export function isPower(token) {

@@ -296,15 +296,9 @@ class Calculator {
     applyPercent() {
         const expression = this.displayEl.value.trim();
         if (!expression) return;
-
-        try {
-            const value = evaluateExpression(expression);
-            const result = value.div(100);
-            this.displayEl.value = formatDecimal(result);
-            this.refreshLiveResult();
-        } catch (error) {
-            alert('Fehler: ' + error.message);
-        }
+        // Interpret % als Modulo-Operator und füge ihn ein
+        this.handleResultContinuation('%');
+        this.insertText('%');
     }
 
     copyExpression() {
