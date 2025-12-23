@@ -177,3 +177,150 @@ test('Backspace entfernt Power-Operator "** " als Einheit', async () => {
     await teardown(electronApp);
   }
 });
+
+test('Selektion + Einfügen: Ersetzt ausgewählte Ziffern und Caret steht nach Einfügung', async () => {
+  const { electronApp, window } = await launchApp();
+  try {
+    const display = window.locator('#display');
+    await display.click();
+
+    // 1234 -> formatiert "1\u00A0234"
+    await window.keyboard.type('1234');
+    await expect(display).toHaveValue(/1\u00A0234$/);
+
+    // Selektiere die Ziffern "23" (Index 2..4 in der formatierten Darstellung)
+    await window.evaluate(() => {
+      const el = document.querySelector('#display');
+      el.selectionStart = 2; // '2'
+      el.selectionEnd = 4;   // hinter '3'
+    });
+
+    // Tippe '9' → erwartet: "194"
+    await window.keyboard.type('9');
+
+    const state = await window.evaluate(() => {
+      const el = document.querySelector('#display');
+      return { value: el.value, caret: el.selectionStart };
+    });
+
+    expect(state.value).toBe('194');
+    expect(state.caret).toBe(2); // nach '19'
+  } finally {
+    await teardown(electronApp);
+  }
+});
+
+test('Selektion + Backspace: Entfernt Auswahl und Caret am Start der Auswahl', async () => {
+  const { electronApp, window } = await launchApp();
+  try {
+    const display = window.locator('#display');
+    await display.click();
+
+    await window.keyboard.type('1234'); // "1\u00A0234"
+    await window.evaluate(() => {
+      const el = document.querySelector('#display');
+      el.selectionStart = 2; // '2'
+      el.selectionEnd = 4;   // hinter '3'
+    });
+    await window.keyboard.press('Backspace');
+
+    const state = await window.evaluate(() => {
+      const el = document.querySelector('#display');
+      return { value: el.value, caret: el.selectionStart };
+    });
+
+    expect(state.value).toBe('14');
+    expect(state.caret).toBe(1); // nach '1'
+  } finally {
+    await teardown(electronApp);
+  }
+});
+
+test('Klammern: Backspace auf ")" und Delete auf "(" löschen jeweils korrekt', async () => {
+  const { electronApp, window } = await launchApp();
+  try {
+    const display = window.locator('#display');
+    await display.click();
+
+    await window.keyboard.type('(');
+    await window.keyboard.type('123');
+    await window.keyboard.type(')');
+    await expect(display).toHaveValue(/\(123\)$/);
+
+    // Backspace am Ende entfernt ")"
+    await window.keyboard.press('Backspace');
+    await expect(display).toHaveValue(/\(123$/);
+
+    // Delete am Anfang entfernt "("
+    await window.evaluate(() => {
+      const el = document.querySelector('#display');
+      el.selectionStart = el.selectionEnd = 0;
+    });
+    await window.keyboard.press('Delete');
+    await expect(display).toHaveValue(/123$/);
+  } finally {
+    await teardown(electronApp);
+  }
+});
+
+test('Löschen ändert Gruppierung: Delete auf "3" in "12\u00A0345" → "1\u00A0245" mit stabiler Caret-Logik', async () => {
+  const { electronApp, window } = await launchApp();
+  try {
+    const display = window.locator('#display');
+    await display.click();
+
+    await window.keyboard.type('12345');
+    await expect(display).toHaveValue(/12\u00A0345$/);
+
+    // Caret auf die '3' setzen (Index 3 in "12 NBSP 345")
+    await window.evaluate(() => {
+      const el = document.querySelector('#display');
+      el.selectionStart = el.selectionEnd = 3;
+    });
+
+    await window.keyboard.press('Delete');
+
+    const state = await window.evaluate(() => {
+      const el = document.querySelector('#display');
+      const caret = el.selectionStart;
+      const digitsBefore = el.value.slice(0, caret).replace(/\u00A0/g, '').replace(/\s/g, '').replace(/[^0-9,]/g,'').replace(/,/g,'').length;
+      return { value: el.value, caret, digitsBefore };
+    });
+
+    expect(state.value).toMatch(/1\u00A0245$/);
+    expect(state.digitsBefore).toBe(1); // caret bleibt vor der zweiten Ziffer
+  } finally {
+    await teardown(electronApp);
+  }
+});
+
+test('Operator-Löschung mergt Zahlen: "12 + 34" → Delete auf "+" ergibt "1\u00A0234"; Caret bleibt semantisch nach 2 Ziffern', async () => {
+  const { electronApp, window } = await launchApp();
+  try {
+    const display = window.locator('#display');
+    await display.click();
+
+    await window.keyboard.type('12+34'); // wird zu "12 + 34"
+    await expect(display).toHaveValue(/12 \+ 34$/);
+
+    // Caret auf das '+' setzen (Index 3)
+    await window.evaluate(() => {
+      const el = document.querySelector('#display');
+      el.selectionStart = el.selectionEnd = 3;
+    });
+
+    await window.keyboard.press('Delete');
+
+    const state = await window.evaluate(() => {
+      const el = document.querySelector('#display');
+      const caret = el.selectionStart;
+      const digitsBefore = el.value.slice(0, caret).replace(/\u00A0/g, '').replace(/\D/g, '').length;
+      return { value: el.value, caret, digitsBefore };
+    });
+
+    expect(state.value).toMatch(/1\u00A0234$/);
+    expect(state.digitsBefore).toBe(1);
+  } finally {
+    await teardown(electronApp);
+  }
+});
