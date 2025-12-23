@@ -39,6 +39,7 @@ class Calculator {
 
         // Keyboard input on document
         document.addEventListener('keydown', (e) => {
+            const keyLower = (e.key || '').toLowerCase();
             // Special handling for ^ (Dead Key) - may report as "Dead" or "^"
             if (e.key === '^' || e.key === 'Dead' || e.code === 'BracketLeft') {
                 // Check if this is the circumflex/caret dead key
@@ -53,9 +54,9 @@ class Calculator {
             }
             
             // Text input with selection replacement support
-            if ('0123456789,+-*/()%'.includes(e.key) || e.key === '.') {
+            if ('0123456789,+-*/()%'.includes(keyLower) || keyLower === '.') {
                 e.preventDefault();
-                const char = e.key === '.' ? ',' : e.key;
+                const char = keyLower === '.' ? ',' : keyLower;
                 this.handleResultContinuation(char);
                 this.insertText(char === ',' ? ',' : char);
             }
@@ -79,34 +80,34 @@ class Calculator {
                 e.preventDefault();
                 this.displayEl.focus();
             }
-            if (e.key === 'v' && e.ctrlKey) {
+            if (keyLower === 'v' && e.ctrlKey) {
                 e.preventDefault();
                 this.pasteFromClipboard();
             }
-            if (e.key === 'm' || e.key === 'M') {
+            if (keyLower === 'm') {
                 e.preventDefault();
                 this.insertLastResult();
             }
-            if (e.key === 'q' || e.key === 'Q') {
+            if (keyLower === 'q') {
                 e.preventDefault();
                 this.applySquare();
             }
-            if (e.key === 'r' || e.key === 'R') {
+            if (keyLower === 'r') {
                 e.preventDefault();
                 this.applySqrt();
             }
-            if (e.key === 'i' || e.key === 'I') {
+            if (keyLower === 'i') {
                 e.preventDefault();
                 this.handleAction('reciprocal');
             }
-            if (e.key === 'n' || e.key === 'N') {
+            if (keyLower === 'n') {
                 e.preventDefault();
                 this.handleAction('negate');
             }
-            if (e.key === 'c' && e.ctrlKey && e.shiftKey) {
+            if (keyLower === 'c' && e.ctrlKey && e.shiftKey) {
                 e.preventDefault();
                 this.handleAction('copy-expr');
-            } else if (e.key === 'c' && e.ctrlKey) {
+            } else if (keyLower === 'c' && e.ctrlKey) {
                 e.preventDefault();
                 this.handleAction('copy-result');
             }
