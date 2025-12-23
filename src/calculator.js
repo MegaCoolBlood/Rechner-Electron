@@ -7,7 +7,7 @@ import {
 } from './formatting.mjs';
 
 import { evaluateExpression } from './parser.mjs';
-import { applySquareOp, applySqrtOp, insertTextCore, backspaceCore, deleteCore } from './calculator-core.mjs';
+import { applySquareOp, applySqrtOp, applyReciprocalOp, insertTextCore, backspaceCore, deleteCore } from './calculator-core.mjs';
 
 // Configure Decimal.js for high precision
 Decimal.set({ precision: 50, rounding: Decimal.ROUND_HALF_UP });
@@ -274,16 +274,8 @@ class Calculator {
     applyReciprocal() {
         const expression = this.displayEl.value.trim();
         if (!expression) return;
-
-        try {
-            const value = evaluateExpression(expression);
-            if (value.isZero()) throw new Error('Division durch 0');
-            const result = new Decimal(1).div(value);
-            this.displayEl.value = formatDecimal(result);
-            this.refreshLiveResult();
-        } catch (error) {
-            alert('Fehler: ' + error.message);
-        }
+        this.displayEl.value = applyReciprocalOp(expression);
+        this.refreshLiveResult();
     }
 
     applySquare() {

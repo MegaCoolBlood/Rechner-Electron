@@ -16,6 +16,13 @@ export function applySqrtOp(expression) {
 }
 
 /**
+ * Wrap an expression in a reciprocal form without immediate evaluation.
+ */
+export function applyReciprocalOp(expression) {
+  return `(1/(${expression}))`;
+}
+
+/**
  * Remove an operator (including optional spaces around) that ends at index `endIdx` in `str`.
  * Returns { text, cursor } with the new string and new cursor position.
  */
