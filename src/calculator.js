@@ -53,7 +53,7 @@ class Calculator {
             }
             
             // Text input with selection replacement support
-            if ('0123456789,+-*/()'.includes(e.key) || e.key === '.') {
+            if ('0123456789,+-*/()%'.includes(e.key) || e.key === '.') {
                 e.preventDefault();
                 const char = e.key === '.' ? ',' : e.key;
                 this.handleResultContinuation(char);
@@ -94,6 +94,21 @@ class Calculator {
             if (e.key === 'r' || e.key === 'R') {
                 e.preventDefault();
                 this.applySqrt();
+            }
+            if (e.key === 'i' || e.key === 'I') {
+                e.preventDefault();
+                this.handleAction('reciprocal');
+            }
+            if (e.key === 'n' || e.key === 'N') {
+                e.preventDefault();
+                this.handleAction('negate');
+            }
+            if (e.key === 'c' && e.ctrlKey && e.shiftKey) {
+                e.preventDefault();
+                this.handleAction('copy-expr');
+            } else if (e.key === 'c' && e.ctrlKey) {
+                e.preventDefault();
+                this.handleAction('copy-result');
             }
         });
         
