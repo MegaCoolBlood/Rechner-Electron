@@ -1,4 +1,5 @@
 // Parsing and evaluation utilities for expressions
+import { isAddSub, isMulDiv } from './operators.mjs';
 
 export function sanitizeExpression(expression) {
     return expression.replace(/\s+/g, '').replace(/,/g, '.');
@@ -57,7 +58,7 @@ export function evaluateTokens(tokens) {
     const parseExpression = () => {
         let left = parseTerm();
 
-        while (pos < tokens.length && (tokens[pos].value === '+' || tokens[pos].value === '-')) {
+        while (pos < tokens.length && isAddSub(tokens[pos].value)) {
             const op = tokens[pos++].value;
             const right = parseTerm();
             left = op === '+' ? left.plus(right) : left.minus(right);
@@ -69,7 +70,7 @@ export function evaluateTokens(tokens) {
     const parseTerm = () => {
         let left = parseFactor();
 
-        while (pos < tokens.length && (tokens[pos].value === '*' || tokens[pos].value === '/')) {
+        while (pos < tokens.length && isMulDiv(tokens[pos].value)) {
             const op = tokens[pos++].value;
             const right = parseFactor();
             left = op === '*' ? left.times(right) : left.div(right);

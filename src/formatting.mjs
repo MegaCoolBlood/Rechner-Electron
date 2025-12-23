@@ -1,5 +1,6 @@
 // Formatting utilities for numbers, caret mapping, and operator spacing
-const NBSP = '\u00A0';
+import { NBSP, normalizeNumericInput, decimalSeparator } from './locale.mjs';
+import { findNumberTokens } from './tokenizer-lenient.mjs';
 
 export function isWhitespace(char) {
     return char === ' ' || char === NBSP;
@@ -29,17 +30,17 @@ export function formatNumberPart(numStr, includeFrac = true) {
     }
 
     const trimmedFrac = fracPart.replace(/0+$/, '');
-    return sign + groupedInt + ',' + trimmedFrac;
+    return sign + groupedInt + decimalSeparator() + trimmedFrac;
 }
 
-export function formatDecimal(decimal) {
+export function formatDecimal(decimal, DecimalCtor = globalThis.Decimal) {
     if (!decimal || !decimal.isFinite || !decimal.isFinite()) return 'Fehler';
     const str = decimal.toFixed();
     return formatNumberPart(str, true);
 }
 
-export function formatNumberString(raw) {
-    const normalized = raw.replace(/\s+/g, '').replace(/,/g, '.');
+export function formatNumberString(raw, DecimalCtor = globalThis.Decimal) {
+    const normalized = normalizeNumericInput(raw);
 
     // Preserve partially typed decimals during input (e.g., "0." or "0,0")
     if (normalized.includes('.')) {
@@ -56,12 +57,12 @@ export function formatNumberString(raw) {
     }
 
     try {
-        const decimal = new Decimal(normalized);
+        const decimal = new DecimalCtor(normalized);
         if (decimal.isInteger()) {
             const str = decimal.toFixed(0);
             return formatNumberPart(str, false);
         }
-        return formatDecimal(decimal);
+        return formatDecimal(decimal, DecimalCtor);
     } catch {
         return raw;
     }
@@ -71,13 +72,11 @@ export function formatExpressionWithCaret(value, caret) {
     let result = '';
     let newCaret = caret;
     let pos = 0;
-    const regex = /-?\d[\d\s]*(?:,\d*)?/g; // allow incomplete decimals
-    let match;
-
-    while ((match = regex.exec(value)) !== null) {
-        const tokenStart = match.index;
-        const token = match[0];
-        const tokenEnd = tokenStart + token.length;
+    const tokens = findNumberTokens(value);
+    for (const t of tokens) {
+        const tokenStart = t.start;
+        const token = t.raw;
+        const tokenEnd = t.end;
 
         // Append non-number segment
         if (pos < tokenStart) {
