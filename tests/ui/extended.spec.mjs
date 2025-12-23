@@ -91,7 +91,7 @@ test('Hotkeys: I (Kehrwert), N (Vorzeichen), M (letztes Ergebnis)', async () => 
     // I: Kehrwert von (2+2)
     await window.keyboard.type('2+2');
     await window.keyboard.press('i');
-    await expect(display).toHaveValue(/\(1\/\(2 \+ 2\)\)\)?$/);
+    await expect(display).toHaveValue(/\(1 \/ \(2 \+ 2\)\)\)?$/);
 
     // Enter -> Ergebnis 0,25
     await window.keyboard.press('Enter');

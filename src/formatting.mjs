@@ -160,19 +160,8 @@ export function formatOperatorsWithCaret(value, caret) {
             spaceBefore = 1;
         }
 
-        // Spacing-Regel: Kein Leerzeichen um den Divisionsoperator '/'
-        const replacement = isUnary ? token : (token === '/' ? token : ` ${token} `);
+        const replacement = isUnary ? token : ` ${token} `;
         const resultBeforeOperator = result.length;
-
-        // Entferne alle nachfolgenden Leerzeichen direkt nach '/'
-        let spaceAfterCount = 0;
-        if (!isUnary && token === '/') {
-            let j = tokenEnd;
-            while (j < len && isWhitespace(value[j])) {
-                spaceAfterCount++;
-                j++;
-            }
-        }
 
         if (caret >= tokenStart && caret <= tokenEnd) {
             if (isUnary) {
@@ -182,13 +171,13 @@ export function formatOperatorsWithCaret(value, caret) {
                 newCaret = resultBeforeOperator + replacement.length;
             }
         } else if (caret > tokenEnd) {
-            const delta = replacement.length - token.length - spaceBefore - spaceAfterCount;
+            const delta = replacement.length - token.length - spaceBefore;
             newCaret += delta;
         } /* c8 ignore next 2 -- caret cannot fall strictly between integer positions */ else if (caret > tokenStart - spaceBefore && caret < tokenStart) {
             newCaret = resultBeforeOperator + (isUnary ? 0 : 1);
         }
         result += replacement;
-        i += token.length + spaceAfterCount;
+        i += token.length;
     }
 
     // Remove duplicate spaces and adjust caret position

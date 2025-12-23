@@ -48,7 +48,7 @@ test('hotkeys: Q for square and R for sqrt', async () => {
     await expect(display).toHaveValue(/\(2 \+ 2\) \*\* 2/);
 
     await window.keyboard.press('r');
-    await expect(display).toHaveValue(/\) \*\* \(1\/2\)\)?$/);
+    await expect(display).toHaveValue(/\) \*\* \(1 \/ 2\)\)?$/);
   } finally {
     await teardown(electronApp);
   }
