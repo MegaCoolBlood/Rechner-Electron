@@ -424,30 +424,13 @@ class Calculator {
     applySquare() {
         const expression = this.displayEl.value.trim();
         if (!expression) return;
-
-        try {
-            const value = evaluateExpression(expression);
-            const result = value.pow(2);
-            this.displayEl.value = formatDecimal(result);
-            this.refreshLiveResult();
-        } catch (error) {
-            alert('Fehler: ' + error.message);
-        }
+        this.insertText('** 2');
     }
 
     applySqrt() {
         const expression = this.displayEl.value.trim();
         if (!expression) return;
-
-        try {
-            const value = evaluateExpression(expression);
-            if (value.isNegative()) throw new Error('Wurzel aus negativer Zahl');
-            const result = value.sqrt();
-            this.displayEl.value = formatDecimal(result);
-            this.refreshLiveResult();
-        } catch (error) {
-            alert('Fehler: ' + error.message);
-        }
+        this.insertText('** (1/2)');
     }
 
     applyPercent() {
